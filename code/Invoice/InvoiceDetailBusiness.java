@@ -19,14 +19,19 @@ public class InvoiceDetailBusiness {
         Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-            String sql = "select * from invoicedetail where idInvoice = '" + idInvoice + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            String sql = """
+                    SELECT it.idProduct, it.quantity, p.cost, p.name FROM invoicedetail AS it
+                    JOIN product AS p ON p.idProduct = it.idProduct
+                    WHERE it.idInvoice = ?;
+                    """;
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, idInvoice);
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
                 int quantity = rs.getInt("quantity");
-                String nameProduct = rs.getString("nameProduct");
-                BigDecimal cost = rs.getBigDecimal("costProduct");
+                String nameProduct = rs.getString("name");
+                BigDecimal cost = rs.getBigDecimal("cost");
                 String idProduct = rs.getString("idProduct");
                 list.add(new InvoiceDetail(nameProduct, idProduct, idInvoice, quantity, cost));
             }
@@ -43,13 +48,11 @@ public class InvoiceDetailBusiness {
 
         try {
             conn = DataConnection.setConnect();
-            String sql = "insert into invoicedetail(idInvoice, idProduct, nameProduct, costProduct, quantity) values(?, ?, ?, ?, ?)";
+            String sql = "insert into invoicedetail(idInvoice, idProduct, quantity) values(?, ?, ?)";
             PreparedStatement psm = conn.prepareStatement(sql);
             psm.setString(1, idInvoice);
             psm.setString(2, idProduct);
-            psm.setString(3, nameProduct);
-            psm.setBigDecimal(4, cost);
-            psm.setInt(5, quantity);
+            psm.setInt(3, quantity);
 
             psm.executeUpdate();
         } catch (SQLException e) {

@@ -36,7 +36,7 @@ public class ProductBusiness {
         try {
             conn = DataConnection.setConnect();
 
-            String sql = "delete from Product where idProduct = '" + idProduct + "'";
+            String sql = "delete from product where idProduct = '" + idProduct + "'";
             Statement stm = conn.createStatement();
 
             return stm.executeUpdate(sql) > 0;
@@ -129,23 +129,24 @@ public class ProductBusiness {
         try {
             conn = DataConnection.setConnect();
 
-            String target;
+            String sql;
             if (keyword.contains("DD") || keyword.contains("TC"))
-                target = "idProduct";
+                sql = "SELECT * FROM product WHERE idProduct LIKE ?";
             else if (keyword.compareTo("Đồ dùng cho thú cưng") == 0) {
-                target = "type";
+                sql = "SELECT * FROM product WHERE type LIKE ?";
             } else if (keyword.compareTo("Thú cưng") == 0) {
-                target = "type";
+                sql = "SELECT * FROM product WHERE type LIKE ?";
             } else if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9')
-                target = "cost";
+                sql = "SELECT * FROM product WHERE cost = ?";
             else if (nation.contains(keyword))
-                target = "origin";
+                sql = "SELECT * FROM product WHERE origin LIKE ?";
             else
-                target = "name";
+                sql = "SELECT * FROM product WHERE name LIKE ?";
 
-            String sql = "select * from product where " + target + " = '" + keyword + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            PreparedStatement psm = conn.prepareStatement(sql);
+            if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9') psm.setString(1, keyword);
+            else psm.setString(1, "%" + keyword + "%");
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
                 list.add(new Product(rs.getString("idProduct"), rs.getString("name"), rs.getString("origin"),

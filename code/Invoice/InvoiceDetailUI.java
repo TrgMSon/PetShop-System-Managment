@@ -79,20 +79,26 @@ class ButtonPanel extends JPanel {
         acptBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 Random rand = new Random();
-                String idInvoice = "I" + rand.nextInt(10000);
+                String idInvoice = "I" + String.format("%04d", rand.nextInt(10000));
                 while (InvoiceDetailBusiness.isExist(idInvoice)) {
-                    idInvoice = "I" + rand.nextInt(10000);
+                    idInvoice = "I" + String.format("%04d", rand.nextInt(10000));
                 }
                 String nameCustomer = "", phone = "";
 
                 String idCustomer = CustomerBusiness.findIdCustomer(inforPanel.getTxtPhone().getText());
                 if (idCustomer.compareTo("") == 0) {
-                    idCustomer = "C" + rand.nextInt(10000);
+                    idCustomer = "C" + String.format("%04d", rand.nextInt(10000));
                     while (CustomerBusiness.isExist(idCustomer)) {
-                        idCustomer = "C" + rand.nextInt(10000);
+                        idCustomer = "C" + String.format("%04d", rand.nextInt(10000));
                     }
                     nameCustomer = inforPanel.getTxtNameCustomer().getText();
                     phone = inforPanel.getTxtPhone().getText();
+
+                    if (CustomerBusiness.isValidPhone(phone) == false) {
+                        initInform(menuInvoiceDetail, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
+                        return;
+                    }
+
                     if (CustomerBusiness.validInforCustomer(idCustomer, nameCustomer, phone) == false) {
                         initInform(menuInvoiceDetail, "Vui lòng nhập đầy đủ thông tin khách hàng");
                         return;
@@ -140,7 +146,7 @@ class ButtonPanel extends JPanel {
                         } else {
                             initInform(menuInvoiceDetail, "Không đủ sản phẩm, vui lòng thử lại");
                             InvoiceBusiness.deleteInvoice(idInvoice);
-                            productPanel.loadtData();
+                            productPanel.loadData();
                             return;
                         }
                     }
@@ -148,7 +154,7 @@ class ButtonPanel extends JPanel {
                 if (total.equals(new BigDecimal("0"))) {
                     initInform(menuInvoiceDetail, "Vui lòng nhập số lượng sản phẩm");
                     InvoiceBusiness.deleteInvoice(idInvoice);
-                    productPanel.loadtData();
+                    productPanel.loadData();
                     return;
                 }
 
@@ -283,7 +289,7 @@ class InforPanel extends JPanel {
     }
 
     public void initpNameCustomer(String idCustomer) {
-        lbNameCustomer = new JLabel("Tên");
+        lbNameCustomer = new JLabel("Họ và tên");
         txtNameCustomer = new JTextField(25);
         txtNameCustomer.setEditable(false);
 
@@ -377,7 +383,7 @@ class InvoiceDetailPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         invoiceDetailTable = new JTable();
-        String[] nameColumns = { "Mã sản phẩm", "Tên", "Giá (VND)", "Số lượng" };
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Số lượng" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -397,7 +403,7 @@ class ProductPanel extends JPanel {
     private JTable tableProduct;
     private DefaultTableModel dtm;
 
-    public void loadtData() {
+    public void loadData() {
         dtm.setRowCount(0);
 
         Connection conn = null;
@@ -430,13 +436,13 @@ class ProductPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         tableProduct = new JTable();
-        String[] namecolumns = { "Mã sản phẩm", "Tên", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
+        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
         dtm = new DefaultTableModel(namecolumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 5;
             }
         };
-        loadtData();
+        loadData();
 
         tableProduct.setModel(dtm);
         tableProduct.setRowSelectionAllowed(true);

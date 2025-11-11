@@ -4,11 +4,16 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+
 import java.math.BigDecimal;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import Connection.DataConnection;
+import Mode.Mode;
 
 public class ReportBusiness {
     public static BigDecimal getIncome(String keyword) {
@@ -39,6 +44,30 @@ public class ReportBusiness {
         }
 
         return result;
+    }
+
+    public static ArrayList<BigDecimal> getListIncome(LocalDate target, Mode mode) {
+        ArrayList<BigDecimal> listIncome = new ArrayList<>();
+
+        if (mode == Mode.YEAR) {
+            for (int i=1; i<=12; i++) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+                String date = target.format(formatter);
+                listIncome.add(getIncome(date).divide(new BigDecimal("1000")));
+                target = target.plusMonths(1);
+            }
+        }
+
+        else {
+            for (int i=1; i<=target.getDayOfMonth(); i++) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                String date = target.format(formatter);
+                listIncome.add(getIncome(date).divide(new BigDecimal("1000")));
+                target = target.plusDays(1);
+            }
+        }
+
+        return listIncome;
     }
 
     public static String getBestSeller(String key) {
@@ -83,5 +112,10 @@ public class ReportBusiness {
         }
 
         return ans;
+    }
+
+    public static String normalizeDate(String date) {
+        String[] tmp = date.split("-");
+        return tmp[2] + "/" + tmp[1] + "/" + tmp[0];
     }
 }

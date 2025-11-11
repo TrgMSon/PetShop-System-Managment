@@ -33,7 +33,7 @@ class InvoicePanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         tableInvoice = new JTable();
-        String[] nameColumns = { "Mã hóa đơn", "Tổng tiền", "Ngày giao dịch", "Mã khách hàng" };
+        String[] nameColumns = { "Mã hóa đơn", "Tổng tiền (VND)", "Ngày giao dịch", "Mã khách hàng" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;

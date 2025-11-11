@@ -2,33 +2,65 @@ package Warehouse;
 
 import Mode.Mode;
 import Format.Format;
+import Connection.DataConnection;
+
 import com.toedter.calendar.JDateChooser;
-import java.text.SimpleDateFormat;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JTextField;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.BorderLayout;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
-import Connection.DataConnection;
-import javax.swing.JTable;
-import javax.swing.JScrollPane;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+import java.math.BigDecimal;
+
+class Pair<K, V> {
+    private K key;
+    private V value;
+
+    public Pair(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public K getKey() {
+        return key;
+    }
+
+    public V getValue() {
+        return value;
+    }
+
+    public void setKey(K key) {
+        this.key = key;
+    }
+
+    public void setValue(V value) {
+        this.value = value;
+    }
+}
 
 class Inform {
     private static JButton okBt;
@@ -226,22 +258,22 @@ class WarehouseDetailPanel extends JPanel {
     private DefaultTableModel dtm;
 
     public String getStateProduct(int quantityInStock) {
-        if (quantityInStock >= 1 && quantityInStock <= 5)
-            return "Sắp hết hàng";
-        else if (quantityInStock > 5)
-            return "Còn hàng";
+        if (quantityInStock > 20) return "Còn hàng";
+        else if (quantityInStock >= 1) return "Sắp hết hàng";
         return "Hết hàng";
     }
 
     public void loadData(String idWarehouse) {
         dtm.setRowCount(0);
 
-        ArrayList<WarehouseDetail> list = WarehouseDetailBusiness.showWarehouseDetail(idWarehouse);
-        for (WarehouseDetail i : list) {
-            Object[] row = { i.getIdWarehouse(), i.getIdProduct(), i.getNameProduct(),
-                    WarehouseDetailBusiness.getOrigin(i.getIdProduct()), i.getLastReceiveDate(),
-                    String.valueOf(i.getQuantityInStock()),
-                    getStateProduct(i.getQuantityInStock()) };
+        ArrayList<Pair<WarehouseDetail, BigDecimal>> list = WarehouseDetailBusiness.showWarehouseDetail(idWarehouse);
+        for (Pair<WarehouseDetail, BigDecimal> i : list) {
+            Object[] row = { i.getKey().getIdProduct(), i.getKey().getNameProduct(),
+                    Format.normalizeNumber(String.valueOf(i.getValue())),
+                    WarehouseDetailBusiness.getOrigin(i.getKey().getIdProduct()), i.getKey().getLastReceiveDate(),
+                    String.valueOf(i.getKey().getQuantityInStock()),
+                    getStateProduct(i.getKey().getQuantityInStock()) 
+                };
             dtm.addRow(row);
         }
     }
@@ -250,7 +282,7 @@ class WarehouseDetailPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         warehouseDetailTable = new JTable();
-        String[] nameColumns = { "Mã kho", "Mã sản phẩm", "Tên", "Xuất xứ", "Ngày cuối nhập kho", "Số lượng sẵn có",
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Ngày cuối nhập kho", "Số lượng sẵn có",
                 "Trạng thái" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
@@ -442,9 +474,9 @@ class ButtonPanelWarehouse extends JPanel {
                 int maxCapacity = 0;
                 if (mode == Mode.ADD) {
                     Random rand = new Random();
-                    idWarehouse = "W" + rand.nextInt(10000);
+                    idWarehouse = "W" + String.format("%04d", rand.nextInt(10000));
                     while (WarehouseBusiness.isExist(idWarehouse)) {
-                        idWarehouse = "W" + rand.nextInt(10000);
+                        idWarehouse = "W" + String.format("%04d", rand.nextInt(10000));
                     }
                     address = warehouseInfor.getTxtAddress().getText();
                     maxCapacity = Integer.parseInt(warehouseInfor.getTxtCapacity().getText());
@@ -588,7 +620,7 @@ class ProductPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         tableProduct = new JTable();
-        String[] namecolumns = { "Mã sản phẩm", "Tên", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
+        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
         dtm = new DefaultTableModel(namecolumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 5;

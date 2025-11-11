@@ -19,14 +19,14 @@ public class CustomerBusiness {
         try {
             conn = DataConnection.setConnect(); 
         
-            String target;
-            if (keyword.contains("C")) target = "idCustomer";
-            else if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9') target = "phone";
-            else target = "name";
+            String sql;
+            if (keyword.contains("C")) sql = "SELECT * FROM customer WHERE idCustomer LIKE ?";
+            else if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9') sql = "SELECT * FROM customer WHERE phone LIKE ?";
+            else sql = "SELECT * FROM customer WHERE name LIKE ?";
 
-            String sql = "Select * from customer where " + target + " = '" + keyword + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, "%" + keyword + "%");
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
                 list.add(new Customer(rs.getString("idCustomer"), rs.getString("name"), rs.getString("phone")));

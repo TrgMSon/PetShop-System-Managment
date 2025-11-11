@@ -159,7 +159,7 @@ class DetailProduct extends JFrame {
 
         panelName = new JPanel();
         panelName.setLayout(new FlowLayout(FlowLayout.LEFT));
-        lbName = new JLabel("Tên");
+        lbName = new JLabel("Tên sản phẩm");
         name = new JTextArea(2, 35);
         panelName.add(lbName);
         panelName.add(name);
@@ -193,6 +193,10 @@ class DetailProduct extends JFrame {
         add(panelType);
 
         setLocationRelativeTo(null);
+    }
+
+    public JPanel getPanelId() {
+        return panelId;
     }
 
     public JTextArea getTxtId() {
@@ -254,7 +258,7 @@ class ProductPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         tableProduct = new JTable();
-        String[] nameColumns = { "Mã sản phẩm", "Tên", "Giá (VND)", "Xuất xứ", "Loại" };
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -306,6 +310,7 @@ class ButtonPanel extends JPanel {
                 ButtonDetailProduct buttonDetailProduct = new ButtonDetailProduct(productPanel, formEdit);
                 formEdit.add(buttonDetailProduct);
                 formEdit.getTxtId().setEditable(false);
+                formEdit.getPanelId().setVisible(false);
                 formEdit.setVisible(true);
             }
         });

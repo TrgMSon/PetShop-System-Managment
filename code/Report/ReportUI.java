@@ -5,23 +5,29 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
-import javax.swing.JTextArea;
 import javax.swing.JButton;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
 import javax.swing.JDialog;
+
 import Format.Format;
 import Connection.DataConnection;
+import Mode.Mode;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.time.LocalDate;
@@ -36,7 +42,7 @@ class Inform {
     public static void initInform(JFrame menuWarehouseDetail, String message) {
         inform = new JDialog(menuWarehouseDetail, "Thông báo", true);
         inform.setLayout(new GridLayout(2, 1));
-        inform.setSize(300, 200);
+        inform.setSize(400, 200);
         inform.setLocationRelativeTo(menuWarehouseDetail);
 
         okBt = new JButton("Đóng");
@@ -61,31 +67,27 @@ class Inform {
 }
 
 class ButtonPanel extends JPanel {
-    private JRadioButton monthOpt, dayOpt, yearOpt;
+    private JRadioButton monthOpt, yearOpt;
 
     public ButtonPanel(ReportPanel reportPanel) {
         setLayout(new FlowLayout(FlowLayout.CENTER));
 
         yearOpt = new JRadioButton("Năm");
         monthOpt = new JRadioButton("Tháng");
-        dayOpt = new JRadioButton("Ngày");
-        dayOpt.setSelected(true);
-        initActionDay(monthOpt, dayOpt, reportPanel, yearOpt);
-        initActionMonth(monthOpt, dayOpt, reportPanel, yearOpt);
-        initActionYear(monthOpt, dayOpt, reportPanel, yearOpt);
+        monthOpt.setSelected(true);
+        initActionMonth(monthOpt, reportPanel, yearOpt);
+        initActionYear(monthOpt, reportPanel, yearOpt);
 
-        add(dayOpt);
         add(monthOpt);
         add(yearOpt);
 
         setVisible(true);
     }
 
-    public void initActionYear(JRadioButton monthOpt, JRadioButton dayOpt, ReportPanel reportPanel, JRadioButton yearOpt) {
+    public void initActionYear(JRadioButton monthOpt, ReportPanel reportPanel, JRadioButton yearOpt) {
         yearOpt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 if (yearOpt.isSelected()) {
-                    dayOpt.setSelected(false);
                     monthOpt.setSelected(false);
                 } else {
                     yearOpt.setSelected(true);
@@ -97,11 +99,10 @@ class ButtonPanel extends JPanel {
         });
     }
 
-    public void initActionMonth(JRadioButton monthOpt, JRadioButton dayOpt, ReportPanel reportPanel, JRadioButton yearOpt) {
+    public void initActionMonth(JRadioButton monthOpt, ReportPanel reportPanel, JRadioButton yearOpt) {
         monthOpt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 if (monthOpt.isSelected()) {
-                    dayOpt.setSelected(false);
                     yearOpt.setSelected(false);
                 } else {
                     monthOpt.setSelected(true);
@@ -111,26 +112,6 @@ class ButtonPanel extends JPanel {
                 reportPanel.resetData();
             }
         });
-    }
-
-    public void initActionDay(JRadioButton monthOpt, JRadioButton dayOpt, ReportPanel reportPanel, JRadioButton yearOpt) {
-        dayOpt.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                if (dayOpt.isSelected()) {
-                    monthOpt.setSelected(false);
-                    yearOpt.setSelected(false);
-                } else {
-                    dayOpt.setSelected(true);
-                }
-                reportPanel.getTarget().setText("Ngày");
-                reportPanel.getHeader().setText("Doanh thu theo ngày");
-                reportPanel.resetData();
-            }
-        });
-    }
-
-    public JRadioButton getDayOpt() {
-        return dayOpt;
     }
 
     public JRadioButton getMonthOpt() {
@@ -238,10 +219,9 @@ class OldStock extends JFrame {
 }
 
 class ReportPanel extends JPanel {
-    private JLabel header, income, bestSeller, OldStock, target;
-    private JTextField txtIncome, txtTarget, duration;
-    private JTextArea txtBestSeller;
-    private JPanel pHeader, pIncome, pBestSeller, pOldStock, pTarget;
+    private JLabel header, OldStock, target;
+    private JTextField txtTarget, duration;
+    private JPanel pHeader, pOldStock, pTarget;
     private JButton search, showOldStock;
 
     public JLabel getTarget() {
@@ -253,56 +233,36 @@ class ReportPanel extends JPanel {
     }
 
     public void resetData() {
-        txtBestSeller.setText("");
-        txtIncome.setText("");
         txtTarget.setText("");
     }
 
     public ReportPanel(JFrame menuReport) {
-        setLayout(new GridLayout(5, 1));
+        setLayout(new GridLayout(3, 1));
 
         pHeader = new JPanel();
         pHeader.setLayout(new FlowLayout(FlowLayout.CENTER));
-        header = new JLabel("Doanh thu theo ngày");
+        header = new JLabel("Doanh thu theo tháng");
         pHeader.add(header);
         add(pHeader);
 
         pTarget = new JPanel();
         pTarget.setLayout(new FlowLayout(FlowLayout.LEFT));
-        target = new JLabel("Ngày");
+        target = new JLabel("Tháng");
         txtTarget = new JTextField(25);
-        search = new JButton("Tìm kiếm");
+        search = new JButton("Xem báo cáo doanh thu");
         initActionSearch(search, menuReport);
         pTarget.add(target);
         pTarget.add(txtTarget);
         pTarget.add(search);
         add(pTarget);
 
-        pIncome = new JPanel();
-        pIncome.setLayout(new FlowLayout(FlowLayout.LEFT));
-        income = new JLabel("Doanh thu");
-        txtIncome = new JTextField(25);
-        pIncome.add(income);
-        pIncome.add(txtIncome);
-        add(pIncome);
-
-        pBestSeller = new JPanel();
-        pBestSeller.setLayout(new BorderLayout());
-        pBestSeller.setSize(100, 4000);
-        bestSeller = new JLabel("Sản phẩm bán chạy nhất");
-        txtBestSeller = new JTextArea(10, 50);
-        txtBestSeller.setEditable(false);
-        pBestSeller.add(bestSeller, BorderLayout.BEFORE_FIRST_LINE);
-        pBestSeller.add(txtBestSeller, BorderLayout.BEFORE_LINE_BEGINS);
-        add(pBestSeller);
-
         pOldStock = new JPanel();
         pOldStock.setLayout(new FlowLayout(FlowLayout.LEFT));
         OldStock = new JLabel("Số ngày tồn kho tối đa");
         duration = new JTextField(9);
-        duration.setText("70");
+        duration.setText("50");
         showOldStock = new JButton("Xem danh sách hàng tồn kho");
-        initActionShow(showOldStock, duration);
+        initActionShow(showOldStock, duration, menuReport);
         pOldStock.add(OldStock);
         pOldStock.add(duration);
         pOldStock.add(showOldStock);
@@ -311,12 +271,16 @@ class ReportPanel extends JPanel {
         setVisible(true);
     }
 
-    public void initActionShow(JButton showOldStock, JTextField duration) {
+    public void initActionShow(JButton showOldStock, JTextField duration, JFrame menuReport) {
         showOldStock.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                OldStock oldStock = new OldStock();
-                PanelOldStock panelOldStock = new PanelOldStock(Integer.parseInt(duration.getText()));
-                oldStock.add(panelOldStock, BorderLayout.CENTER);
+                OldStockReport oldStockReport = new OldStockReport(Integer.parseInt(duration.getText()));
+                if (oldStockReport.getCountRow() == 0) {
+                    Inform.initInform(menuReport, "Không có sản phẩm tồn kho theo yêu cầu, vui lòng thử lại");
+                }
+                else {
+                    oldStockReport.setVisible(true);
+                }
             }
         });
     }
@@ -326,10 +290,25 @@ class ReportPanel extends JPanel {
             public void actionPerformed(ActionEvent ae) {
                 String key = txtTarget.getText();
                 if (key.equals("") == false) {
-                    String totalIncome = String.valueOf(ReportBusiness.getIncome(key));
-                    String bestSellers = ReportBusiness.getBestSeller(key);
-                    txtIncome.setText(Format.normalizeNumber(totalIncome) + " VND");
-                    txtBestSeller.setText(bestSellers);
+                    String[] tmp = key.split("-");
+                    LocalDate target;
+                    if (tmp.length == 2) {
+                        target = LocalDate.of(Integer.parseInt(tmp[0]), Integer.parseInt(tmp[1]), 1);
+                        ArrayList<BigDecimal> listIncome = ReportBusiness.getListIncome(target, Mode.MONTH);
+                        LineChartReport p = new LineChartReport();
+                        p.setListIncome(listIncome);
+                        p.setInforChart("DOANH THU THÁNG " + tmp[1], "Doanh thu (nghìn VND)", "Ngày");
+                        p.show();
+                    }
+                    else if (tmp.length == 1) {
+                        target = LocalDate.of(Integer.parseInt(tmp[0]), 1, 1);
+                        ArrayList<BigDecimal> listIncome = ReportBusiness.getListIncome(target, Mode.YEAR);
+                        LineChartReport p = new LineChartReport();
+                        p.setListIncome(listIncome);
+                        p.setInforChart("DOANH THU NĂM " + key, "Doanh thu (nghìn VND)", "Tháng");
+                        p.show();
+                    }
+                    
                 }
                 else {
                     Inform.initInform(menuReport, "Vui lòng nhập thông tin tìm kiếm");
@@ -342,8 +321,9 @@ class ReportPanel extends JPanel {
 public class ReportUI {
     public static void showMenu() {
         JFrame menuReport = new JFrame("Báo cáo");
-        menuReport.setSize(600, 500);
+        menuReport.setSize(600, 400);
         menuReport.setLayout(new BorderLayout());
+        
 
         ReportPanel reportPanel = new ReportPanel(menuReport);
         menuReport.add(reportPanel, BorderLayout.CENTER);

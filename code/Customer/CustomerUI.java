@@ -65,9 +65,9 @@ class ButtonDetailPanel extends JPanel {
                 Customer obj = new Customer();
                 if (formEdit.getTxtId().getText().compareTo("") == 0) {
                     Random rand = new Random();
-                    String tmp = "C" + rand.nextInt(10000);
+                    String tmp = "C" + String.format("%04d", rand.nextInt(10000));
                     while (CustomerBusiness.isExist(tmp)) {
-                        tmp = "C" + rand.nextInt(10000);
+                        tmp = "C" + String.format("%04d", rand.nextInt(10000));
                     }
                     obj.setId(tmp);
                     obj.setName(formEdit.getTxtName().getText());
@@ -108,6 +108,11 @@ class ButtonDetailPanel extends JPanel {
 
                     if (CustomerBusiness.isValidPhone(formEdit.getTxtPhone().getText()) == false) {
                         initInform(formEdit, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
+                        return;
+                    }
+
+                    if (CustomerBusiness.isPhoneExist(formEdit.getTxtPhone().getText())) {
+                        initInform(formEdit, "Số điện thoại đã tồn tại, vui lòng thử lại");
                         return;
                     }
 
@@ -163,7 +168,7 @@ class DetailCustomer extends JFrame {
 
         panelName = new JPanel();
         panelName.setLayout(new FlowLayout(FlowLayout.LEFT));
-        lbName = new JLabel("Tên");
+        lbName = new JLabel("Họ và tên");
         name = new JTextField(25);
         panelName.add(lbName);
         panelName.add(name);
@@ -255,7 +260,7 @@ class PanelCustomer extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         tableCustomer = new JTable();
-        String[] nameColumns = { "Mã khách hàng", "Tên", "Số điện thoại" };
+        String[] nameColumns = { "Mã khách hàng", "Họ và tên", "Số điện thoại" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;

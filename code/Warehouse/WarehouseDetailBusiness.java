@@ -1,6 +1,7 @@
 package Warehouse;
 
 import Connection.DataConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -12,6 +13,7 @@ import javax.swing.JTable;
 
 import java.util.ArrayList;
 import java.util.logging.Level;
+import java.math.BigDecimal;
 
 class Pair<K, V> {
     private K key;
@@ -40,23 +42,29 @@ class Pair<K, V> {
 }
 
 public class WarehouseDetailBusiness {
-    public static ArrayList<WarehouseDetail> showWarehouseDetail(String idWarehouse) {
-        ArrayList<WarehouseDetail> list = new ArrayList<>();
+    public static ArrayList<Pair<WarehouseDetail, BigDecimal>> showWarehouseDetail(String idWarehouse) {
+        ArrayList<Pair<WarehouseDetail, BigDecimal>> list = new ArrayList<>();
 
         Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-            String sql = "select * from warehousedetail where idWarehouse = '" + idWarehouse + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            String sql = """
+                    SELECT wd.idWarehouse, wd.idProductW, p.name, p.cost, wd.lastReceiveDate, wd.quantityInStock FROM warehousedetail AS wd
+                    JOIN product AS p ON p.idProduct = wd.idProductW
+                    WHERE wd.idWarehouse = ?;
+                    """;
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, idWarehouse);
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
                 String idW = rs.getString("idWarehouse");
                 String idP = rs.getString("idProductW");
-                String name = rs.getString("nameProduct");
+                String name = rs.getString("name");
                 String lrd = rs.getString("lastReceiveDate");
                 int qty = rs.getInt("quantityInStock");
-                list.add(new WarehouseDetail(idW, idP, name, lrd, qty));
+                BigDecimal cost = rs.getBigDecimal("cost");
+                list.add(new Pair<>(new WarehouseDetail(idW, idP, name, lrd, qty), cost));
             }
         } catch (SQLException e) {
             Logger.getLogger(WarehouseDetailBusiness.class.getName()).log(Level.SEVERE, null, e);
@@ -98,14 +106,13 @@ public class WarehouseDetailBusiness {
 
         try {
             conn = DataConnection.setConnect();
-            String sql = "insert into warehousedetail(idWarehouse, idProductW, nameProduct, lastReceiveDate, quantityInStock) values(?, ?, ?, ?, ?)";
+            String sql = "insert into warehousedetail(idWarehouse, idProductW, lastReceiveDate, quantityInStock) values(?, ?, ?, ?)";
             PreparedStatement psm = conn.prepareStatement(sql);
 
             psm.setString(1, warehouseDetail.getIdWarehouse());
             psm.setString(2, warehouseDetail.getIdProduct());
-            psm.setString(3, warehouseDetail.getNameProduct());
-            psm.setString(4, warehouseDetail.getLastReceiveDate());
-            psm.setInt(5, warehouseDetail.getQuantityInStock());
+            psm.setString(3, warehouseDetail.getLastReceiveDate());
+            psm.setInt(4, warehouseDetail.getQuantityInStock());
 
             return psm.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -234,8 +241,37 @@ public class WarehouseDetailBusiness {
         return false;
     }
 
-    public static boolean isFullCapacity(String idWarehouse, int maxCapacity, ProductPanel productPanel) {
+    public static int getCurrentCapacity(String idWarehouse) {
         int sum = 0;
+        
+        Connection conn = null;
+        try {
+            conn = DataConnection.setConnect();
+            String sql = "SELECT SUM(quantityInStock) AS sum_cur_qty FROM warehousedetail WHERE idWarehouse = ?";
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, idWarehouse);
+            ResultSet rs = psm.executeQuery();
+
+            if (rs.next()) {
+                sum = rs.getInt("sum_cur_qty");
+            }
+        } catch (SQLException e) {
+            Logger.getLogger(WarehouseDetailBusiness.class.getName()).log(Level.SEVERE, null, e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println("Cannot close connection");
+            }
+        }
+
+        return sum;
+    }
+
+    public static boolean isFullCapacity(String idWarehouse, int maxCapacity, ProductPanel productPanel) {
+        int sum = getCurrentCapacity(idWarehouse);
 
         JTable table = productPanel.getTableProduct();
         for (int i = 0; i < table.getRowCount(); i++) {
