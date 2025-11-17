@@ -75,7 +75,7 @@ public class LineChartReport {
         chartPanel.setPreferredSize(new Dimension(1000, 700));
         chartPanel.setFont(new Font("Times New Roman", Font.PLAIN, 20));
 
-        lineChartFrame = new JFrame();
+        lineChartFrame = new JFrame("Báo cáo");
         lineChartFrame.setLayout(new BorderLayout(0, 0));
         lineChartFrame.add(chartPanel, BorderLayout.CENTER);
 

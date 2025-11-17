@@ -123,7 +123,7 @@ public class ProductBusiness {
         ArrayList<Product> list = new ArrayList<>();
         ArrayList<String> nation = new ArrayList<>(Arrays.asList(
                 "Việt Nam", "Hàn Quốc", "Mỹ", "Iran", "Đức", "Nhật", "Nga", "Pháp", "Thái Lan",
-                "Hà Lan", "Úc", "Anh", "Châu Phi", "Trung Quốc"));
+                "Hà Lan", "Úc", "Anh", "Châu Phi", "Trung Quốc", "Đài Loan"));
 
         Connection conn = null;
         try {

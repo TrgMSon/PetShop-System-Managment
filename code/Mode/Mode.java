@@ -1,5 +1,5 @@
 package Mode;
 
 public enum Mode {
-    SHOW, ADD, EDIT, RECEIVE, MONTH, YEAR;
+    SHOW, ADD, EDIT, RECEIVE, DAY, MONTH, YEAR;
 }

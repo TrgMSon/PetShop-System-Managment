@@ -50,7 +50,7 @@ public class MenuUI {
             }
         });
 
-        JButton reportBt = new JButton("Xem báo cáo");
+        JButton reportBt = new JButton("Báo cáo");
         menu.add(reportBt);
         reportBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {

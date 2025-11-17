@@ -102,17 +102,17 @@ public class WarehouseBusiness {
         try {
             conn = DataConnection.setConnect();
 
-            String target;
+            String sql;
             if (keyword.contains("W"))
-                target = "idWarehouse";
+                sql = "SELECT * FROM warehouse WHERE idWarehouse LIKE ?";
             else if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9')
-                target = "maxCapacity";
+                sql = "SELECT * FROM warehouse WHERE maxCapacity LIKE ?";
             else
-                target = "address";
+                sql = "SELECT * FROM warehouse WHERE address LIKE ?";
 
-            String sql = "SELECT * FROM warehouse WHERE " + target + " = '" + keyword + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, "%" + keyword + "%");
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
                 list.add(new Warehouse(rs.getString("idWarehouse"), rs.getString("address"), rs.getInt("maxCapacity")));
