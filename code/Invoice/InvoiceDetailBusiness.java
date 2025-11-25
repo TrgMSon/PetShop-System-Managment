@@ -2,12 +2,13 @@ package Invoice;
 
 import Connection.DataConnection;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import java.math.BigDecimal;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -42,8 +43,7 @@ public class InvoiceDetailBusiness {
         return list;
     }
 
-    public static void addInvoiceDetail(String idInvoice, String idProduct, String nameProduct, BigDecimal cost,
-            int quantity) {
+    public static void addInvoiceDetail(String idInvoice, String idProduct, int quantity) {
         Connection conn = null;
 
         try {

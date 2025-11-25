@@ -1,20 +1,16 @@
 package Invoice;
 
-import java.math.BigDecimal;
-
 public class Invoice {
     private String idInvoice, idCustomer, date;
-    private BigDecimal totalAmount;
     
     public Invoice() {
 
     }
 
-    public Invoice(String idInvoice, String idCustomer, String date, BigDecimal totalAmount) {
+    public Invoice(String idInvoice, String idCustomer, String date) {
         this.idInvoice = idInvoice;
         this.idCustomer = idCustomer;
         this.date = date;
-        this.totalAmount = totalAmount;
     }
 
     public String getIdInvoice() {
@@ -39,13 +35,5 @@ public class Invoice {
 
     public void setDate(String date) {
         this.date = date;
-    }
-
-    public BigDecimal getTotal() {
-        return totalAmount;
-    }
-
-    public void setTotal(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
     }
 }

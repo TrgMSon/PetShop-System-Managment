@@ -22,14 +22,19 @@ public class ReportBusiness {
         Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-            String sql = "SELECT * FROM invoice WHERE date LIKE ?";
+            String sql = """
+                    SELECT SUM(p.cost * it.quantity) AS sum FROM product AS p
+	                    JOIN invoicedetail AS it ON it.idProduct = p.idProduct
+                        JOIN invoice AS i ON i.idInvoice = it.idInvoice
+                        WHERE i.date LIKE ?
+                        GROUP BY i.date
+                    """;
             PreparedStatement psm = conn.prepareStatement(sql);
             psm.setString(1, "%" + keyword + "%");
             ResultSet rs = psm.executeQuery();
 
-            while (rs.next()) {
-                BigDecimal totalAmount = new BigDecimal(rs.getString("totalAmount"));
-                result = result.add(totalAmount);
+            if (rs.next()) {
+                result = rs.getBigDecimal("sum");
             }
         } catch (SQLException e) {
             Logger.getLogger(ReportBusiness.class.getName()).log(Level.SEVERE, null, e);

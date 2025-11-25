@@ -1,41 +1,52 @@
 package Invoice;
 
 import Mode.Mode;
+import Product.ProductBusiness;
+import Product.Product;
 import Format.Format;
 import Warehouse.WarehouseDetailBusiness;
 import Customer.Customer;
 import Customer.CustomerBusiness;
+import Connection.DataConnection;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import javax.swing.JDialog;
+
+import com.toedter.calendar.JDateChooser;
+
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.math.BigDecimal;
 import java.awt.BorderLayout;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
-import Connection.DataConnection;
-import javax.swing.JTable;
-import javax.swing.JScrollPane;
+import java.awt.Color;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
-import javax.swing.JDialog;
-import com.toedter.calendar.JDateChooser;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 class ButtonPanel extends JPanel {
-    private JButton closeBt, acptBt, okBt;
+    private JButton closeBt, acptBt, okBt, reloadBt;
     private JDialog inform;
     private JLabel lbInform;
     private JPanel pButton, pInform;
@@ -43,10 +54,11 @@ class ButtonPanel extends JPanel {
     public void initInform(JFrame menuInvoiceDetail, String message) {
         inform = new JDialog(menuInvoiceDetail, "Thông báo", true);
         inform.setLayout(new GridLayout(2, 1));
-        inform.setSize(300, 200);
+        inform.setSize(400, 200);
         inform.setLocationRelativeTo(menuInvoiceDetail);
 
         okBt = new JButton("Đóng");
+        okBt.setFont(new Font("System", Font.BOLD, 16));
         okBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 inform.dispose();
@@ -59,6 +71,7 @@ class ButtonPanel extends JPanel {
         pInform = new JPanel();
         pInform.setLayout(new FlowLayout(FlowLayout.CENTER));
         lbInform = new JLabel(message);
+        lbInform.setFont(new Font("System", Font.PLAIN, 16));
         pInform.add(lbInform);
 
         inform.add(pInform);
@@ -72,6 +85,10 @@ class ButtonPanel extends JPanel {
                 menuInvoiceDetail.setVisible(false);
             }
         });
+    }
+
+    public void markProduct() {
+
     }
 
     public void initActionAccept(JFrame menuInvoiceDetail, ProductPanel productPanel, InforPanel inforPanel,
@@ -115,54 +132,64 @@ class ButtonPanel extends JPanel {
                 SimpleDateFormat normalize = new SimpleDateFormat("yyyy-MM-dd");
                 String date = normalize.format(dateInvoice);
 
-                BigDecimal total = new BigDecimal("0");
-                Invoice invoice = new Invoice(idInvoice, idCustomer, date, total);
+                Invoice invoice = new Invoice(idInvoice, idCustomer, date);
                 InvoiceBusiness.addInvoice(invoice);
 
+                boolean isOver = false;
+                boolean hasChoosen = false;
                 JTable table = productPanel.getTableProduct();
                 for (int i = 0; i < table.getRowCount(); i++) {
                     if (table.getValueAt(i, 5) != null) {
                         String idProduct = (String) table.getValueAt(i, 0);
-                        
+
                         Integer quantity;
                         String tmp = (String) table.getValueAt(i, 5);
                         if (tmp.equals("")) {
                             quantity = 0;
-                        }
-                        else {
+                        } else {
                             quantity = Integer.parseInt((String) table.getValueAt(i, 5));
                         }
 
-                        if (quantity == 0) continue;
+                        if (quantity == 0)
+                            continue;
 
-                        BigDecimal cost = new BigDecimal(Format.originalForm(String.valueOf(table.getValueAt(i, 2))));
-                        InvoiceDetailBusiness.addInvoiceDetail(idInvoice, idProduct, (String) table.getValueAt(i, 1), cost, quantity);
+                        InvoiceDetailBusiness.addInvoiceDetail(idInvoice, idProduct, quantity);
 
                         if (WarehouseDetailBusiness.decreaseQuantityInStock(idProduct, quantity, false) == true) {
-                            BigDecimal qty = new BigDecimal(String.valueOf(quantity));
-                            BigDecimal adding = cost.multiply(qty);
-                            total = total.add(adding);
                             WarehouseDetailBusiness.decreaseQuantityInStock(idProduct, quantity, true);
+                            hasChoosen = true;
                         } else {
-                            initInform(menuInvoiceDetail, "Không đủ sản phẩm, vui lòng thử lại");
-                            InvoiceBusiness.deleteInvoice(idInvoice);
-                            productPanel.loadData();
-                            return;
+                            if (isOver == false) table.clearSelection();
+
+                            isOver = true;
+                            table.addRowSelectionInterval(i, i);
                         }
                     }
                 }
-                if (total.equals(new BigDecimal("0"))) {
+
+                if (isOver == true) {
+                    initInform(menuInvoiceDetail, "Không đủ sản phẩm, vui lòng thử lại");
+                    InvoiceBusiness.deleteInvoice(idInvoice);
+                    return;
+                }
+
+                if (hasChoosen == false) {
                     initInform(menuInvoiceDetail, "Vui lòng nhập số lượng sản phẩm");
                     InvoiceBusiness.deleteInvoice(idInvoice);
                     productPanel.loadData();
                     return;
                 }
 
-                invoice.setTotal(total);
-                InvoiceBusiness.updateInvoice(invoice);
-
                 menuInvoiceDetail.setVisible(false);
                 invoicePanel.loadData();
+            }
+        });
+    }
+
+    public void initActionReload(JButton reloadBt, ProductPanel productPanel) {
+        reloadBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                productPanel.loadData();
             }
         });
     }
@@ -172,12 +199,19 @@ class ButtonPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         if (mode == Mode.ADD) {
+            reloadBt = new JButton("Làm mới");
+            reloadBt.setFont(new Font("System", Font.BOLD, 16));
+            add(reloadBt);
+            initActionReload(reloadBt, productPanel);
+
             acptBt = new JButton("Xác nhận");
+            acptBt.setFont(new Font("System", Font.BOLD, 16));
             add(acptBt);
             initActionAccept(menuInvoiceDetail, productPanel, inforPanel, invoicePanel);
         }
 
         closeBt = new JButton("Đóng");
+        closeBt.setFont(new Font("System", Font.BOLD, 16));
         add(closeBt);
         initActionClose(menuInvoiceDetail);
     }
@@ -191,7 +225,9 @@ class InforPanel extends JPanel {
 
     public void initChooseDate() {
         lbDate = new JLabel("Ngày giao dịch");
+        lbDate.setFont(new Font("System", Font.BOLD, 16));
         txtChooseDate = new JDateChooser();
+        txtChooseDate.setFont(new Font("System", Font.PLAIN, 16));
         txtChooseDate.setSize(500, 500);
 
         pDate = new JPanel();
@@ -202,7 +238,9 @@ class InforPanel extends JPanel {
 
     public void initDate(String idInvoice) {
         lbDate = new JLabel("Ngày giao dịch");
+        lbDate.setFont(new Font("System", Font.BOLD, 16));
         txtDate = new JTextField(25);
+        txtDate.setFont(new Font("System", Font.PLAIN, 16));
         txtDate.setEditable(false);
 
         Connection conn = null;
@@ -234,7 +272,9 @@ class InforPanel extends JPanel {
 
     public void initpPhone(String idCustomer) {
         lbPhone = new JLabel("Số điện thoại");
+        lbPhone.setFont(new Font("System", Font.BOLD, 16));
         txtPhone = new JTextField(25);
+        txtPhone.setFont(new Font("System", Font.PLAIN, 16));
         txtPhone.setEditable(false);
 
         Connection conn = null;
@@ -266,7 +306,9 @@ class InforPanel extends JPanel {
 
     public void initpIdInvoice(String idInvoice) {
         lbIdInvoice = new JLabel("Mã hóa đơn");
+        lbIdInvoice.setFont(new Font("System", Font.BOLD, 16));
         txtIdInvoice = new JTextField(25);
+        txtIdInvoice.setFont(new Font("System", Font.PLAIN, 16));
         txtIdInvoice.setEditable(false);
         txtIdInvoice.setText(idInvoice);
 
@@ -278,7 +320,9 @@ class InforPanel extends JPanel {
 
     public void initpIdCustomer(String idCustomer) {
         lbIdCustomer = new JLabel("Mã khách hàng");
+        lbIdCustomer.setFont(new Font("System", Font.BOLD, 16));
         txtIdCustomer = new JTextField(25);
+        txtIdCustomer.setFont(new Font("System", Font.PLAIN, 16));
         txtIdCustomer.setEditable(false);
         txtIdCustomer.setText(idCustomer);
 
@@ -290,7 +334,9 @@ class InforPanel extends JPanel {
 
     public void initpNameCustomer(String idCustomer) {
         lbNameCustomer = new JLabel("Họ và tên");
+        lbNameCustomer.setFont(new Font("System", Font.BOLD, 16));
         txtNameCustomer = new JTextField(25);
+        txtNameCustomer.setFont(new Font("System", Font.PLAIN, 16));
         txtNameCustomer.setEditable(false);
 
         Connection conn = null;
@@ -383,7 +429,7 @@ class InvoiceDetailPanel extends JPanel {
         setLayout(new GridLayout(1, 1));
 
         invoiceDetailTable = new JTable();
-        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Số lượng" };
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá bán (VND)", "Số lượng" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -393,7 +439,21 @@ class InvoiceDetailPanel extends JPanel {
 
         invoiceDetailTable.setModel(dtm);
         invoiceDetailTable.setRowSelectionAllowed(true);
-        add(new JScrollPane(invoiceDetailTable));
+        invoiceDetailTable.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        invoiceDetailTable.setRowHeight(50);
+        invoiceDetailTable.setFont(new Font("System", Font.PLAIN, 16));
+        invoiceDetailTable.setBorder(new LineBorder(new Color(0, 0, 0)));
+
+        invoiceDetailTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        invoiceDetailTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+        invoiceDetailTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        invoiceDetailTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(invoiceDetailTable);
+        scrollPane.setBorder(new EmptyBorder(0, 100, 0, 100));
+
+        add(scrollPane);
 
         setVisible(true);
     }
@@ -402,14 +462,16 @@ class InvoiceDetailPanel extends JPanel {
 class ProductPanel extends JPanel {
     private JTable tableProduct;
     private DefaultTableModel dtm;
+    private ArrayList<Integer> used;
 
     public void loadData() {
+        used = new ArrayList<>(Collections.nCopies(10005, 0));
         dtm.setRowCount(0);
 
         Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-            String sql = "select * from product";
+            String sql = "select * from product order by cost";
             Statement stm = conn.createStatement();
             ResultSet rs = stm.executeQuery(sql);
 
@@ -432,11 +494,86 @@ class ProductPanel extends JPanel {
         }
     }
 
+    public void initActionSearch(JButton searchBt, JTextField txtSearch) {
+        searchBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                String keyword = txtSearch.getText();
+
+                for (int i = 0; i < tableProduct.getRowCount(); i++) {
+                    if (tableProduct.getValueAt(i, 5) != null) {
+                        String idProduct = (String) tableProduct.getValueAt(i, 0);
+                        
+                        int qty;
+                        String tmp = (String) tableProduct.getValueAt(i, 5);
+                        if (tmp.equals("")) {
+                            qty = 0;
+                        }
+                        else {
+                            qty = Integer.parseInt((String) tableProduct.getValueAt(i, 5));
+                        }
+
+                        Integer index = Integer.parseInt(idProduct.substring(2));
+                        used.set(index, qty);
+                    }
+                }
+
+                if (keyword.isEmpty() == false) {
+                    ArrayList<Product> listProduct = ProductBusiness.showListProduct(keyword);
+                    dtm.setRowCount(0);
+
+                    for (Product i : listProduct) {
+                        Object[] row = { i.getIdProduct(), i.getName(), Format.normalizeNumber(String.valueOf(i.getCost())), i.getOrigin(), i.getType() };
+                        dtm.addRow(row);
+                    }
+                    tableProduct.setModel(dtm);
+                } else {
+                    dtm.setRowCount(0);
+                    ArrayList<Product> listProduct = ProductBusiness.showAllProduct();
+                    dtm.setRowCount(0);
+
+                    for (Product i : listProduct) {
+                        Object[] row = { i.getIdProduct(), i.getName(), Format.normalizeNumber(String.valueOf(i.getCost())), i.getOrigin(), i.getType() };
+                        dtm.addRow(row);
+                    }
+                    tableProduct.setModel(dtm);
+                }
+
+                for (int i = 0; i < tableProduct.getRowCount(); i++) {
+                    String idProduct = (String) tableProduct.getValueAt(i, 0);
+                    Integer index = Integer.parseInt(idProduct.substring(2));
+                    if (used.get(index) != 0) {
+                        tableProduct.setValueAt(String.valueOf(used.get(index)), i, 5);
+                    }
+                }
+            }
+        });
+    }
+
+    public JPanel createSearchPanel() {
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel lbSearch = new JLabel("Từ khóa");
+        lbSearch.setFont(new Font("System", Font.BOLD, 16));
+        JTextField txtSearch = new JTextField(25);
+        txtSearch.setFont(new Font("System", Font.PLAIN, 16));
+        JButton searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
+        initActionSearch(searchBt, txtSearch);
+
+        searchPanel.add(lbSearch);
+        searchPanel.add(txtSearch);
+        searchPanel.add(searchBt);
+
+        return searchPanel;
+    }
+
     public ProductPanel() {
-        setLayout(new GridLayout(1, 1));
+        used = new ArrayList<>(Collections.nCopies(10005, 0));
+        setLayout(new BorderLayout());
 
         tableProduct = new JTable();
-        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
+        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá bán (VND)", "Xuất xứ", "Loại", "Số lượng" };
         dtm = new DefaultTableModel(namecolumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 5;
@@ -446,7 +583,25 @@ class ProductPanel extends JPanel {
 
         tableProduct.setModel(dtm);
         tableProduct.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableProduct));
+        tableProduct.setRowHeight(50);
+        tableProduct.setBorder(new LineBorder(new Color(0, 0, 0)));
+        tableProduct.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableProduct.setFont(new Font("System", Font.PLAIN, 16));
+
+        tableProduct.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tableProduct.getColumnModel().getColumn(1).setPreferredWidth(360);
+        tableProduct.getColumnModel().getColumn(2).setPreferredWidth(80);
+        tableProduct.getColumnModel().getColumn(3).setPreferredWidth(80);
+        tableProduct.getColumnModel().getColumn(4).setPreferredWidth(100);
+        tableProduct.getColumnModel().getColumn(5).setPreferredWidth(60);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableProduct);
+
+        add(scrollPane, BorderLayout.CENTER);
+
+        JPanel searchPanel = createSearchPanel();
+        add(searchPanel, BorderLayout.NORTH);
 
         setVisible(true);
     }
@@ -463,7 +618,7 @@ class ProductPanel extends JPanel {
 public class InvoiceDetailUI {
     public static void showMenuDetail(String idInvoice, String idCustomer, Mode mode, InvoicePanel invoicePanel) {
         JFrame menuInvoiceDetail = new JFrame("Chi tiết hóa đơn");
-        menuInvoiceDetail.setSize(600, 600);
+        menuInvoiceDetail.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuInvoiceDetail.setLayout(new BorderLayout());
 
         InforPanel inforPanel = new InforPanel(idInvoice, idCustomer, mode);
@@ -478,9 +633,7 @@ public class InvoiceDetailUI {
 
         else if (mode == Mode.ADD) {
             menuInvoiceDetail.setTitle("Thêm hóa đơn");
-            menuInvoiceDetail.setSize(950, 600);
             menuInvoiceDetail.add(productPanel, BorderLayout.CENTER);
-            // inforPanel.getTxtDate().setEditable(true);
             inforPanel.getTxtPhone().setEditable(true);
             inforPanel.getTxtNameCustomer().setEditable(true);
         }

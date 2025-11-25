@@ -3,6 +3,8 @@ package Warehouse;
 import Mode.Mode;
 import Format.Format;
 import Connection.DataConnection;
+import Product.Product;
+import Product.ProductBusiness;
 
 import com.toedter.calendar.JDateChooser;
 
@@ -12,16 +14,20 @@ import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -32,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 import java.math.BigDecimal;
@@ -71,10 +78,11 @@ class Inform {
     public static void initInform(JFrame menuWarehouseDetail, String message) {
         inform = new JDialog(menuWarehouseDetail, "Thông báo", true);
         inform.setLayout(new GridLayout(2, 1));
-        inform.setSize(300, 200);
+        inform.setSize(400, 200);
         inform.setLocationRelativeTo(menuWarehouseDetail);
 
         okBt = new JButton("Đóng");
+        okBt.setFont(new Font("System", Font.BOLD, 16));
         okBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 inform.dispose();
@@ -87,6 +95,7 @@ class Inform {
         pInform = new JPanel();
         pInform.setLayout(new FlowLayout(FlowLayout.CENTER));
         lbInform = new JLabel(message);
+        lbInform.setFont(new Font("System", Font.PLAIN, 16));
         pInform.add(lbInform);
 
         inform.add(pInform);
@@ -103,7 +112,9 @@ class WarehouseInfor extends JPanel {
 
     public void initpCurrentCapacity(String idWarehouse) {
         lbCurrentCapacity = new JLabel("Sức chứa đã dùng");
+        lbCurrentCapacity.setFont(new Font("System", Font.BOLD, 16));
         txtCurrentCapacity = new JTextField(25);
+        txtCurrentCapacity.setFont(new Font("System", Font.PLAIN, 16));
         txtCurrentCapacity
                 .setText(Format.normalizeNumber(String.valueOf(WarehouseBusiness.getCurrentCapacity(idWarehouse))));
         txtCurrentCapacity.setEditable(false);
@@ -116,7 +127,9 @@ class WarehouseInfor extends JPanel {
 
     public void initpReceiveDate() {
         lbReceiveDate = new JLabel("Ngày nhập kho");
+        lbReceiveDate.setFont(new Font("System", Font.BOLD, 16));
         lastReceiveDate = new JDateChooser();
+        lastReceiveDate.setFont(new Font("System", Font.PLAIN, 16));
         lastReceiveDate.setSize(500, 500);
 
         pReceiveDate = new JPanel();
@@ -127,7 +140,9 @@ class WarehouseInfor extends JPanel {
 
     public void initpId(String idWarehouse) {
         lbId = new JLabel("Mã kho");
+        lbId.setFont(new Font("System", Font.BOLD, 16));
         txtId = new JTextField(25);
+        txtId.setFont(new Font("System", Font.PLAIN, 16));
         txtId.setEditable(false);
         txtId.setText(idWarehouse);
 
@@ -139,7 +154,9 @@ class WarehouseInfor extends JPanel {
 
     public void initpAddress(String idWarehouse) {
         lbAddress = new JLabel("Địa chỉ");
+        lbAddress.setFont(new Font("System", Font.BOLD, 16));
         txtAddress = new JTextField(25);
+        txtAddress.setFont(new Font("System", Font.PLAIN, 16));
         txtAddress.setEditable(false);
 
         Connection conn = null;
@@ -172,7 +189,9 @@ class WarehouseInfor extends JPanel {
 
     public void initpCapacity(String idWarehouse) {
         lbCapacity = new JLabel("Sức chứa tối đa");
+        lbCapacity.setFont(new Font("System", Font.BOLD, 16));
         txtCapacity = new JTextField(25);
+        txtCapacity.setFont(new Font("System", Font.PLAIN, 16));
         txtCapacity.setEditable(false);
 
         Connection conn = null;
@@ -212,7 +231,7 @@ class WarehouseInfor extends JPanel {
         initpAddress(idWarehouse);
         initpCapacity(idWarehouse);
 
-        add(pId);
+        if (mode != Mode.ADD) add(pId);
         add(pAddress);
         add(pCapacity);
         if (mode == Mode.ADD || mode == Mode.RECEIVE) {
@@ -266,7 +285,7 @@ class WarehouseDetailPanel extends JPanel {
     public void loadData(String idWarehouse) {
         dtm.setRowCount(0);
 
-        ArrayList<Pair<WarehouseDetail, BigDecimal>> list = WarehouseDetailBusiness.showWarehouseDetail(idWarehouse);
+        ArrayList<Pair<WarehouseDetail, BigDecimal>> list = WarehouseDetailBusiness.showWarehouseDetail(idWarehouse, "");
         for (Pair<WarehouseDetail, BigDecimal> i : list) {
             Object[] row = { i.getKey().getIdProduct(), i.getKey().getNameProduct(),
                     Format.normalizeNumber(String.valueOf(i.getValue())),
@@ -278,11 +297,53 @@ class WarehouseDetailPanel extends JPanel {
         }
     }
 
+    public void initActionSearch(JButton searchBt, JTextField txtSearch, String idWarehouse) {
+        searchBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                String keyword = txtSearch.getText();
+                if (keyword.isEmpty() == false) {
+                    ArrayList<Pair<WarehouseDetail, BigDecimal>> listWarehouseDetail = WarehouseDetailBusiness.showWarehouseDetail(idWarehouse, keyword);
+                    dtm.setRowCount(0);
+
+                    for (Pair<WarehouseDetail, BigDecimal> i : listWarehouseDetail) {
+                        Object[] row = { i.getKey().getIdProduct(), i.getKey().getNameProduct(),
+                                Format.normalizeNumber(String.valueOf(i.getValue())),
+                                WarehouseDetailBusiness.getOrigin(i.getKey().getIdProduct()), i.getKey().getLastReceiveDate(),
+                                String.valueOf(i.getKey().getQuantityInStock()),
+                                getStateProduct(i.getKey().getQuantityInStock()) 
+                        };
+                        dtm.addRow(row);
+                    }
+                    warehouseDetailTable.setModel(dtm);
+                }
+            }
+        });
+    }
+
+    public JPanel createSearchPanel(String idWarehouse) {
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel lbSearch = new JLabel("Từ khóa");
+        lbSearch.setFont(new Font("System", Font.BOLD, 16));
+        JTextField txtSearch = new JTextField(25);
+        txtSearch.setFont(new Font("System", Font.PLAIN, 16));
+        JButton searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
+        initActionSearch(searchBt, txtSearch, idWarehouse);
+
+        searchPanel.add(lbSearch);
+        searchPanel.add(txtSearch);
+        searchPanel.add(searchBt);
+
+        return searchPanel;
+    }
+
     public WarehouseDetailPanel(String idWarehouse) {
-        setLayout(new GridLayout(1, 1));
+        setLayout(new BorderLayout());
 
         warehouseDetailTable = new JTable();
-        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Ngày cuối nhập kho", "Số lượng sẵn có",
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá bán (VND)", "Xuất xứ", "Ngày cuối nhập kho", "Số lượng sẵn có",
                 "Trạng thái" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
@@ -292,8 +353,28 @@ class WarehouseDetailPanel extends JPanel {
         loadData(idWarehouse);
 
         warehouseDetailTable.setModel(dtm);
+        warehouseDetailTable.setBorder(new LineBorder(new Color(0, 0, 0)));
+        warehouseDetailTable.setFont(new Font("System", Font.PLAIN, 16));
+        warehouseDetailTable.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
         warehouseDetailTable.setRowSelectionAllowed(true);
-        add(new JScrollPane(warehouseDetailTable));
+        warehouseDetailTable.setRowHeight(50);
+
+        warehouseDetailTable.getColumnModel().getColumn(0).setPreferredWidth(50);
+        warehouseDetailTable.getColumnModel().getColumn(1).setPreferredWidth(360);
+        warehouseDetailTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+        warehouseDetailTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+        warehouseDetailTable.getColumnModel().getColumn(4).setPreferredWidth(120);
+        warehouseDetailTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        warehouseDetailTable.getColumnModel().getColumn(6).setPreferredWidth(50);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(warehouseDetailTable);
+        scrollPane.setBorder(new EmptyBorder(0, 80, 0, 80));
+
+        add(scrollPane, BorderLayout.CENTER);
+
+        JPanel searchPanel = createSearchPanel(idWarehouse);
+        add(searchPanel, BorderLayout.NORTH);
 
         setVisible(true);
     }
@@ -308,13 +389,13 @@ class WarehouseDetailPanel extends JPanel {
 }
 
 class AddingFrame extends JFrame {
-    private JButton acptBt, closeBt;
+    private JButton acptBt, closeBt, reloadBt;
     private JPanel button;
 
     public void initActionClose(ProductPanel productPanel) {
         closeBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                productPanel.loadtData();
+                productPanel.loadData();
                 setVisible(false);
             }
         });
@@ -325,10 +406,16 @@ class AddingFrame extends JFrame {
         acptBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 String idWarehouse = warehouseInfor2.getTxtIdW().getText();
+
+                if (warehouseInfor2.getTxtCapacity().getText().isEmpty()) {
+                    Inform.initInform(menuWarehouseDetail, "Vui lòng nhập sức chứa tối đa");
+                    return;
+                }
                 int maxCapacity = Integer.parseInt(warehouseInfor2.getTxtCapacity().getText());
+
                 if (WarehouseDetailBusiness.isFullCapacity(idWarehouse, maxCapacity, productPanel)) {
                     Inform.initInform(menuWarehouseDetail, "Kho đã đạt sức chứa tối đa, vui lòng thử lại");
-                    productPanel.loadtData();
+                    productPanel.loadData();
                     return;
                 }
 
@@ -370,7 +457,7 @@ class AddingFrame extends JFrame {
 
                 warehousePanel.loadData();
                 warehouseDetailPanel.loadData(idWarehouse);
-                productPanel.loadtData();
+                productPanel.loadData();
 
                 if (hasChoosen == false) {
                     Inform.initInform(menuWarehouseDetail, "Vui lòng chọn sản phẩm");
@@ -381,16 +468,31 @@ class AddingFrame extends JFrame {
         });
     }
 
+    public void initActionReload(ProductPanel productPanel) {
+        reloadBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                productPanel.loadData();
+            }
+        });
+    }
+
     public void initButton(ProductPanel productPanel, JFrame menuWarehouseDetail, WarehouseInfor warehouseInfor2,
             Mode mode, WarehousePanel warehousePanel, WarehouseDetailPanel warehouseDetailPanel) {
+        reloadBt = new JButton("Làm mới");
+        reloadBt.setFont(new Font("System", Font.BOLD, 16));
+        
         acptBt = new JButton("Xác nhận");
+        acptBt.setFont(new Font("System", Font.BOLD, 16));
         closeBt = new JButton("Đóng");
+        closeBt.setFont(new Font("System", Font.BOLD, 16));
 
         button = new JPanel();
         button.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        button.add(reloadBt);
         button.add(acptBt);
         button.add(closeBt);
 
+        initActionReload(productPanel);
         initActionClose(productPanel);
         initActionAccept(menuWarehouseDetail, productPanel, warehouseInfor2, warehousePanel, warehouseDetailPanel);
     }
@@ -398,7 +500,7 @@ class AddingFrame extends JFrame {
     public AddingFrame(ProductPanel productPanel, JFrame menuWarehouseDetail, WarehouseInfor warehouseInfor,
             Mode mode, WarehousePanel warehousePanel, WarehouseDetailPanel warehouseDetailPanel) {
         setTitle("Thêm sản phẩm");
-        setSize(950, 600);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
         String idWarehouse = warehouseInfor.getTxtIdW().getText();
         String address = warehouseInfor.getTxtAddress().getText();
@@ -428,13 +530,21 @@ class ButtonPanelWarehouse extends JPanel {
         });
     }
 
-    public void initActionDelete(WarehousePanel warehousePanel, WarehouseDetailPanel warehouseDetailPanel) {
+    public void initActionReload(ProductPanel productPanel) {
+        reloadBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                productPanel.loadData();
+            }
+        });
+    }
+
+    public void initActionDelete(WarehouseInfor warehouseInfor, WarehousePanel warehousePanel, WarehouseDetailPanel warehouseDetailPanel) {
         delBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 int row = warehouseDetailPanel.getTableWarehouseDetail().getSelectedRow();
                 if (row != -1) {
-                    String idWarehouse = (String) warehouseDetailPanel.getTableWarehouseDetail().getValueAt(row, 0);
-                    String idProduct = (String) warehouseDetailPanel.getTableWarehouseDetail().getValueAt(row, 1);
+                    String idWarehouse = warehouseInfor.getTxtIdW().getText();
+                    String idProduct = (String) warehouseDetailPanel.getTableWarehouseDetail().getValueAt(row, 0);
 
                     WarehouseDetailBusiness.deleteWarehouseDetail(idWarehouse, idProduct);
                     warehouseDetailPanel.loadData(idWarehouse);
@@ -479,6 +589,11 @@ class ButtonPanelWarehouse extends JPanel {
                         idWarehouse = "W" + String.format("%04d", rand.nextInt(10000));
                     }
                     address = warehouseInfor.getTxtAddress().getText();
+
+                    if (warehouseInfor.getTxtCapacity().getText().isEmpty()) {
+                        Inform.initInform(menuWarehouseDetail, "Vui lòng nhập sức chứa tối đa");
+                        return;
+                    }
                     maxCapacity = Integer.parseInt(warehouseInfor.getTxtCapacity().getText());
 
                     if (WarehouseBusiness.isValidAddress(address.trim()) == false) {
@@ -488,7 +603,7 @@ class ButtonPanelWarehouse extends JPanel {
 
                     if (WarehouseDetailBusiness.isFullCapacity(idWarehouse, maxCapacity, productPanel)) {
                         Inform.initInform(menuWarehouseDetail, "Kho đã đạt sức chứa tối đa, vui lòng thử lại");
-                        productPanel.loadtData();
+                        productPanel.loadData();
                         return;
                     }
 
@@ -555,12 +670,20 @@ class ButtonPanelWarehouse extends JPanel {
 
         if (mode != Mode.ADD) {
             reloadBt = new JButton("Làm mới");
+            reloadBt.setFont(new Font("System", Font.BOLD, 16));
             add(reloadBt);
             initActionReload(warehousePanel, warehouseDetailPanel, warehouseInfor);
+        }
+        else {
+            reloadBt = new JButton("Làm mới");
+            reloadBt.setFont(new Font("System", Font.BOLD, 16));
+            add(reloadBt);
+            initActionReload(productPanel);
         }
 
         if (mode == Mode.ADD || mode == Mode.EDIT) {
             acptBt = new JButton("Xác nhận");
+            acptBt.setFont(new Font("System", Font.BOLD, 16));
             add(acptBt);
             initActionAccept(mode, menuWarehouseDetail, productPanel, warehouseInfor,
                     warehousePanel, warehouseDetailPanel);
@@ -568,16 +691,19 @@ class ButtonPanelWarehouse extends JPanel {
 
         if (mode == Mode.EDIT) {
             addBt = new JButton("Thêm");
+            addBt.setFont(new Font("System", Font.BOLD, 16));
             add(addBt);
             initActionAdd(mode, menuWarehouseDetail, productPanel, warehouseInfor, warehousePanel,
                     warehouseDetailPanel);
 
             delBt = new JButton("Xóa");
+            delBt.setFont(new Font("System", Font.BOLD, 16));
             add(delBt);
-            initActionDelete(warehousePanel, warehouseDetailPanel);
+            initActionDelete(warehouseInfor, warehousePanel, warehouseDetailPanel);
         }
 
         closeBt = new JButton("Đóng");
+        closeBt.setFont(new Font("System", Font.BOLD, 16));
         add(closeBt);
         initActionClose(menuWarehouseDetail);
     }
@@ -586,14 +712,16 @@ class ButtonPanelWarehouse extends JPanel {
 class ProductPanel extends JPanel {
     private JTable tableProduct;
     private DefaultTableModel dtm;
+    private ArrayList<Integer> used;
 
-    public void loadtData() {
+    public void loadData() {
+        used = new ArrayList<>(Collections.nCopies(10005, 0));
         dtm.setRowCount(0);
 
         Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-            String sql = "select * from product";
+            String sql = "select * from product order by cost";
             Statement stm = conn.createStatement();
             ResultSet rs = stm.executeQuery(sql);
 
@@ -616,21 +744,113 @@ class ProductPanel extends JPanel {
         }
     }
 
+    public void initActionSearch(JButton searchBt, JTextField txtSearch) {
+        searchBt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                String keyword = txtSearch.getText();
+
+                for (int i = 0; i < tableProduct.getRowCount(); i++) {
+                    if (tableProduct.getValueAt(i, 5) != null) {
+                        String idProduct = (String) tableProduct.getValueAt(i, 0);
+                        
+                        int qty;
+                        String tmp = (String) tableProduct.getValueAt(i, 5);
+                        if (tmp.equals("")) {
+                            qty = 0;
+                        }
+                        else {
+                            qty = Integer.parseInt((String) tableProduct.getValueAt(i, 5));
+                        }
+
+                        Integer index = Integer.parseInt(idProduct.substring(2));
+                        used.set(index, qty);
+                    }
+                }
+
+                if (keyword.isEmpty() == false) {
+                    ArrayList<Product> listProduct = ProductBusiness.showListProduct(keyword);
+                    dtm.setRowCount(0);
+
+                    for (Product i : listProduct) {
+                        Object[] row = { i.getIdProduct(), i.getName(), Format.normalizeNumber(String.valueOf(i.getCost())), i.getOrigin(), i.getType() };
+                        dtm.addRow(row);
+                    }
+                    tableProduct.setModel(dtm);
+                } else {
+                    dtm.setRowCount(0);
+                    ArrayList<Product> listProduct = ProductBusiness.showAllProduct();
+                    dtm.setRowCount(0);
+
+                    for (Product i : listProduct) {
+                        Object[] row = { i.getIdProduct(), i.getName(), Format.normalizeNumber(String.valueOf(i.getCost())), i.getOrigin(), i.getType() };
+                        dtm.addRow(row);
+                    }
+                    tableProduct.setModel(dtm);
+                }
+
+                for (int i = 0; i < tableProduct.getRowCount(); i++) {
+                    String idProduct = (String) tableProduct.getValueAt(i, 0);
+                    Integer index = Integer.parseInt(idProduct.substring(2));
+                    if (used.get(index) != 0) {
+                        tableProduct.setValueAt(String.valueOf(used.get(index)), i, 5);
+                    }
+                }
+            }
+        });
+    }
+
+    public JPanel createSearchPanel() {
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel lbSearch = new JLabel("Từ khóa");
+        lbSearch.setFont(new Font("System", Font.BOLD, 16));
+        JTextField txtSearch = new JTextField(25);
+        txtSearch.setFont(new Font("System", Font.PLAIN, 16));
+        JButton searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
+        initActionSearch(searchBt, txtSearch);
+
+        searchPanel.add(lbSearch);
+        searchPanel.add(txtSearch);
+        searchPanel.add(searchBt);
+
+        return searchPanel;
+    }
+
     public ProductPanel() {
-        setLayout(new GridLayout(1, 1));
+        setLayout(new BorderLayout());
 
         tableProduct = new JTable();
-        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại", "Số lượng" };
+        String[] namecolumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá bán (VND)", "Xuất xứ", "Loại", "Số lượng" };
         dtm = new DefaultTableModel(namecolumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 5;
             }
         };
-        loadtData();
+        loadData();
 
         tableProduct.setModel(dtm);
         tableProduct.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableProduct));
+        tableProduct.setRowHeight(50);
+        tableProduct.setBorder(new LineBorder(new Color(0, 0, 0)));
+        tableProduct.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableProduct.setFont(new Font("System", Font.PLAIN, 16));
+
+        tableProduct.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tableProduct.getColumnModel().getColumn(1).setPreferredWidth(360);
+        tableProduct.getColumnModel().getColumn(2).setPreferredWidth(80);
+        tableProduct.getColumnModel().getColumn(3).setPreferredWidth(80);
+        tableProduct.getColumnModel().getColumn(4).setPreferredWidth(100);
+        tableProduct.getColumnModel().getColumn(5).setPreferredWidth(60);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableProduct);
+
+        add(scrollPane, BorderLayout.CENTER);
+
+        JPanel searchPanel = createSearchPanel();
+        add(searchPanel, BorderLayout.NORTH);
 
         setVisible(true);
     }
@@ -647,7 +867,7 @@ class ProductPanel extends JPanel {
 public class WarehouseDetailUI {
     public static void showWarehouseDetail(String idWarehouse, Mode mode, WarehousePanel warehousePanel) {
         JFrame menuWarehouseDetail = new JFrame("Chi tiết kho");
-        menuWarehouseDetail.setSize(1100, 600);
+        menuWarehouseDetail.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuWarehouseDetail.setLayout(new BorderLayout());
 
         WarehouseInfor warehouseInfor = new WarehouseInfor(idWarehouse, mode);

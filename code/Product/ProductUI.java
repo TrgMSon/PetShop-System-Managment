@@ -2,6 +2,7 @@ package Product;
 
 import Connection.DataConnection;
 import Format.Format;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -9,38 +10,46 @@ import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.table.DefaultTableModel;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import java.awt.GridLayout;
 import javax.swing.JScrollPane;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.GridLayout;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.math.BigDecimal;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Random;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import java.util.ArrayList;
 
-class ButtonDetailProduct extends JPanel {
-    private JPanel pButton, pInform;
-    private JButton acptBt, closeBt, okBt;
-    private JDialog inform;
-    private JLabel lbInform;
+class Inform {
+    private static JButton okBt;
+    private static JLabel lbInform;
+    private static JPanel pButton, pInform;
+    private static JDialog inform;
 
-    public void initInform(JFrame menuProduct, String message) {
+    public static void initInform(JFrame menuProduct, String message) {
         inform = new JDialog(menuProduct, "Thông báo", true);
         inform.setLayout(new GridLayout(2, 1));
-        inform.setSize(300, 200);
+        inform.setSize(400, 200);
         inform.setLocationRelativeTo(menuProduct);
 
         okBt = new JButton("Đóng");
+        okBt.setFont(new Font("System", Font.BOLD, 16));
         okBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 inform.dispose();
@@ -53,20 +62,17 @@ class ButtonDetailProduct extends JPanel {
         pInform = new JPanel();
         pInform.setLayout(new FlowLayout(FlowLayout.CENTER));
         lbInform = new JLabel(message);
+        lbInform.setFont(new Font("System", Font.PLAIN, 16));
         pInform.add(lbInform);
 
         inform.add(pInform);
         inform.add(pButton);
         inform.setVisible(true);
     }
+}
 
-    public void initActionClose() {
-        closeBt.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                setVisible(false);
-            }
-        });
-    }
+class ButtonDetailProduct extends JPanel {
+    private JButton acptBt, closeBt;
 
     public void initActionAccept(ProductPanel productPanel, DetailProduct formEdit) {
         acptBt.addActionListener(new ActionListener() {
@@ -80,7 +86,7 @@ class ButtonDetailProduct extends JPanel {
                 obj.setType(String.valueOf(formEdit.getTxtType().getSelectedItem()));
 
                 if (ProductBusiness.isValidProduct(obj) == false) {
-                    initInform(formEdit, "Vui lòng nhập đủ thông tin sản phẩm");
+                    Inform.initInform(formEdit, "Vui lòng nhập đủ thông tin sản phẩm");
                     return;
                 }
 
@@ -95,13 +101,13 @@ class ButtonDetailProduct extends JPanel {
                     }
 
                     String idProduct = tmp + String.format("%04d", rand.nextInt(10000));
-                    while (ProductBusiness.isExist(tmp)) {
+                    while (ProductBusiness.isExist(idProduct.substring(2))) {
                         idProduct = tmp + String.format("%04d", rand.nextInt(10000));
                     }
                     obj.setIdProduct(idProduct);
 
                     if (ProductBusiness.isExist(obj)) {
-                        initInform(formEdit, "Thông tin đẫ tồn tại, vui lòng thử lại");
+                        Inform.initInform(formEdit, "Thông tin đã tồn tại, vui lòng thử lại");
                         return;
                     }
 
@@ -111,7 +117,14 @@ class ButtonDetailProduct extends JPanel {
 
                 else {
                     obj.setIdProduct(formEdit.getTxtId().getText());
-                    ProductBusiness.updateProduct(obj);
+                    if (ProductBusiness.isInInvoice(obj.getIdProduct())) {
+                        Inform.initInform(formEdit, "Sản phẩm đang có trong hóa đơn, không thể sửa");
+                        formEdit.setVisible(false);
+                        return;
+                    }
+                    else {
+                        ProductBusiness.updateProduct(obj);
+                    }
                     productPanel.loadData();
                 }
 
@@ -124,10 +137,12 @@ class ButtonDetailProduct extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         acptBt = new JButton("Xác nhận");
+        acptBt.setFont(new Font("System", Font.BOLD, 16));
         initActionAccept(productPanel, formEdit);
         add(acptBt);
 
         closeBt = new JButton("Đóng");
+        closeBt.setFont(new Font("System", Font.BOLD, 16));
         closeBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 formEdit.setVisible(false);
@@ -147,42 +162,52 @@ class DetailProduct extends JFrame {
 
     public DetailProduct(ProductPanel productPanel) {
         setTitle("Thông tin sản phẩm");
-        setSize(600, 300);
+        setSize(900, 500);
         setLayout(new GridLayout(6, 1));
 
         panelId = new JPanel();
         panelId.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbId = new JLabel("Mã sản phẩm");
+        lbId.setFont(new Font("System", Font.BOLD, 16));
         id = new JTextArea(2, 35);
+        id.setFont(new Font("System", Font.PLAIN, 16));
         panelId.add(lbId);
         panelId.add(id);
 
         panelName = new JPanel();
         panelName.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbName = new JLabel("Tên sản phẩm");
+        lbName.setFont(new Font("System", Font.BOLD, 16));
         name = new JTextArea(2, 35);
+        name.setFont(new Font("System", Font.PLAIN, 16));
         panelName.add(lbName);
         panelName.add(name);
 
         panelCost = new JPanel();
         panelCost.setLayout(new FlowLayout(FlowLayout.LEFT));
-        lbCost = new JLabel("Giá (VND)");
+        lbCost = new JLabel("Giá bán (VND)");
+        lbCost.setFont(new Font("System", Font.BOLD, 16));
         cost = new JTextArea(2, 35);
+        cost.setFont(new Font("System", Font.PLAIN, 16));
         panelCost.add(lbCost);
         panelCost.add(cost);
 
         panelOrigin = new JPanel();
         panelOrigin.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbOrigin = new JLabel("Xuất xứ");
+        lbOrigin.setFont(new Font("System", Font.BOLD, 16));
         origin = new JTextArea(2, 35);
+        origin.setFont(new Font("System", Font.PLAIN, 16));
         panelOrigin.add(lbOrigin);
         panelOrigin.add(origin);
 
         panelType = new JPanel();
         panelType.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbType = new JLabel("Loại");
+        lbType.setFont(new Font("System", Font.BOLD, 16));
         String[] options = { "Đồ dùng cho thú cưng", "Thú cưng" };
         type = new JComboBox<String>(options);
+        type.setFont(new Font("System", Font.BOLD, 16));
         panelType.add(lbType);
         panelType.add(type);
 
@@ -231,7 +256,7 @@ class ProductPanel extends JPanel {
         try {
             conn = DataConnection.setConnect();
 
-            String sql = "select * from product";
+            String sql = "select * from product order by cost";
             Statement stm = conn.createStatement();
             ResultSet rs = stm.executeQuery(sql);
 
@@ -255,10 +280,10 @@ class ProductPanel extends JPanel {
     }
 
     public ProductPanel() {
-        setLayout(new GridLayout(1, 1));
+        setLayout(new BorderLayout());
 
         tableProduct = new JTable();
-        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá (VND)", "Xuất xứ", "Loại" };
+        String[] nameColumns = { "Mã sản phẩm", "Tên sản phẩm", "Giá bán (VND)", "Xuất xứ", "Loại" };
         dtm = new DefaultTableModel(nameColumns, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -267,8 +292,23 @@ class ProductPanel extends JPanel {
         loadData();
 
         tableProduct.setModel(dtm);
+        tableProduct.setRowHeight(50);
+        tableProduct.setFont(new Font("System", Font.PLAIN, 16));
+        tableProduct.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableProduct.setBorder(new LineBorder(new Color(0, 0, 0)));
         tableProduct.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableProduct));
+
+        tableProduct.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tableProduct.getColumnModel().getColumn(1).setPreferredWidth(400);
+        tableProduct.getColumnModel().getColumn(2).setPreferredWidth(50);
+        tableProduct.getColumnModel().getColumn(3).setPreferredWidth(50);
+        tableProduct.getColumnModel().getColumn(4).setPreferredWidth(50);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableProduct);
+        scrollPane.setBorder(new EmptyBorder(0, 100, 0, 100));
+
+        add(scrollPane, BorderLayout.CENTER);
 
         setVisible(true);
     }
@@ -285,13 +325,17 @@ class ProductPanel extends JPanel {
 class ButtonPanel extends JPanel {
     private JButton addBt, delBt, editBt, reloadBt;
 
-    public ButtonPanel(ProductPanel productPanel) {
+    public ButtonPanel(ProductPanel productPanel, JFrame menuProduct) {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         reloadBt = new JButton("Làm mới");
+        reloadBt.setFont(new Font("System", Font.BOLD, 16));
         addBt = new JButton("Thêm");
+        addBt.setFont(new Font("System", Font.BOLD, 16));
         delBt = new JButton("Xóa");
+        delBt.setFont(new Font("System", Font.BOLD, 16));
         editBt = new JButton("Sửa");
+        editBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(reloadBt);
         add(addBt);
@@ -321,7 +365,10 @@ class ButtonPanel extends JPanel {
 
                 if (row != -1) {
                     String id = String.valueOf(productPanel.getTableProduct().getValueAt(row, 0));
-                    ProductBusiness.deleteProduct(id);
+                    if (ProductBusiness.deleteProduct(id) == false) {
+                        Inform.initInform(menuProduct, "Sản phẩm đang có trong hóa đơn, không thể xóa");
+                        return;
+                    }
                     productPanel.loadData();
                 }
             }
@@ -396,8 +443,11 @@ class SearchPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         label = new JLabel("Từ khóa");
+        label.setFont(new Font("System", Font.BOLD, 16));
         text = new JTextArea(1, 25);
+        text.setFont(new Font("System", Font.PLAIN, 16));
         searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(label);
         add(text);
@@ -420,12 +470,12 @@ class SearchPanel extends JPanel {
 public class ProductUI {
     public static void showMenu() {
         JFrame menuProduct = new JFrame("Sản phẩm");
-        menuProduct.setSize(800, 600);
+        menuProduct.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuProduct.setLayout(new BorderLayout());
 
         ProductPanel productPanel = new ProductPanel();
         SearchPanel searchPanel = new SearchPanel(productPanel);
-        ButtonPanel buttonPanel = new ButtonPanel(productPanel);
+        ButtonPanel buttonPanel = new ButtonPanel(productPanel, menuProduct);
 
         menuProduct.add(productPanel, BorderLayout.CENTER);
         menuProduct.add(searchPanel, BorderLayout.NORTH);

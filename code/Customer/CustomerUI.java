@@ -9,6 +9,8 @@ import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
@@ -16,10 +18,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JDialog;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -31,19 +35,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 
-class ButtonDetailPanel extends JPanel {
-    private JButton closeBt, acptBt, okBt;
-    private JDialog inform;
-    private JLabel lbInform;
-    private JPanel pButton, pInform;
+class Inform {
+    private static JButton okBt;
+    private static JLabel lbInform;
+    private static JPanel pButton, pInform;
+    private static JDialog inform;
 
-    public void initInform(DetailCustomer formEdit, String message) {
-        inform = new JDialog(formEdit, "Thông báo", true);
+    public static void initInform(JFrame menuCustomer, String message) {
+        inform = new JDialog(menuCustomer, "Thông báo", true);
         inform.setLayout(new GridLayout(2, 1));
-        inform.setSize(350, 200);
-        inform.setLocationRelativeTo(formEdit);
+        inform.setSize(400, 200);
+        inform.setLocationRelativeTo(menuCustomer);
 
         okBt = new JButton("Đóng");
+        okBt.setFont(new Font("System", Font.BOLD, 16));
         okBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 inform.dispose();
@@ -56,12 +61,17 @@ class ButtonDetailPanel extends JPanel {
         pInform = new JPanel();
         pInform.setLayout(new FlowLayout(FlowLayout.CENTER));
         lbInform = new JLabel(message);
+        lbInform.setFont(new Font("System", Font.PLAIN, 16));
         pInform.add(lbInform);
 
         inform.add(pInform);
         inform.add(pButton);
         inform.setVisible(true);
     }
+}
+
+class ButtonDetailPanel extends JPanel {
+    private JButton closeBt, acptBt;
 
     public void initActionUpdate(DetailCustomer formEdit, PanelCustomer panelCustomer) {
         acptBt.addActionListener(new ActionListener() {
@@ -77,23 +87,23 @@ class ButtonDetailPanel extends JPanel {
                     obj.setName(formEdit.getTxtName().getText());
                     obj.setPhone(formEdit.getTxtPhone().getText());
 
-                    if (CustomerBusiness.isValidPhone(formEdit.getTxtPhone().getText()) == false) {
-                        initInform(formEdit, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
+                    if (CustomerBusiness.isValidPhone(obj.getPhone()) == false) {
+                        Inform.initInform(formEdit, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
                         return;
                     }
 
-                    if (CustomerBusiness.isPhoneExist(formEdit.getTxtPhone().getText())) {
-                        initInform(formEdit, "Số điện thoại đã tồn tại, vui lòng thử lại");
+                    if (CustomerBusiness.isPhoneExist(obj.getPhone(), obj.getId())) {
+                        Inform.initInform(formEdit, "Số điện thoại đã tồn tại, vui lòng thử lại");
                         return;
                     }
 
                     if (CustomerBusiness.isExist(obj)) {
-                        initInform(formEdit, "Thông tin đã tồn tại, vui lòng thử lại");
+                        Inform.initInform(formEdit, "Thông tin đã tồn tại, vui lòng thử lại");
                         return;
                     }
 
                     if (CustomerBusiness.validInforCustomer(obj.getId(), obj.getName(), obj.getPhone()) == false) {
-                        initInform(formEdit, "Vui lòng nhập đầy đủ thông tin khách hàng");
+                        Inform.initInform(formEdit, "Vui lòng nhập đầy đủ thông tin khách hàng");
                         return;
                     }
                     CustomerBusiness.addCustomer(obj);
@@ -106,17 +116,17 @@ class ButtonDetailPanel extends JPanel {
                     obj.setPhone(formEdit.getTxtPhone().getText());
 
                     if (CustomerBusiness.validInforCustomer(obj.getId(), obj.getName(), obj.getPhone()) == false) {
-                        initInform(formEdit, "Vui lòng nhập đầy đủ thông tin khách hàng");
+                        Inform.initInform(formEdit, "Vui lòng nhập đầy đủ thông tin khách hàng");
                         return;
                     }
 
-                    if (CustomerBusiness.isValidPhone(formEdit.getTxtPhone().getText()) == false) {
-                        initInform(formEdit, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
+                    if (CustomerBusiness.isValidPhone(obj.getPhone()) == false) {
+                        Inform.initInform(formEdit, "Số điện thoại không hợp lệ, vui lòng nhập đủ 10 số");
                         return;
                     }
 
-                    if (CustomerBusiness.isPhoneExist(formEdit.getTxtPhone().getText())) {
-                        initInform(formEdit, "Số điện thoại đã tồn tại, vui lòng thử lại");
+                    if (CustomerBusiness.isPhoneExist(obj.getPhone(), obj.getId())) {
+                        Inform.initInform(formEdit, "Số điện thoại đã tồn tại, vui lòng thử lại");
                         return;
                     }
 
@@ -133,10 +143,12 @@ class ButtonDetailPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         acptBt = new JButton("Xác nhận");
+        acptBt.setFont(new Font("System", Font.BOLD, 16));
         initActionUpdate(formEdit, panelCustomer);
         add(acptBt);
 
         closeBt = new JButton("Đóng");
+        closeBt.setFont(new Font("System", Font.BOLD, 16));
         closeBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 formEdit.setVisible(false);
@@ -156,31 +168,37 @@ class DetailCustomer extends JFrame {
     public DetailCustomer(PanelCustomer panelCustomer, Mode mode) {
         setTitle("Thông tin khách hàng");
         if (mode == Mode.ADD) {
-            setSize(600, 200);
+            setSize(800, 300);
             setLayout(new GridLayout(3, 1));
         } else {
-            setSize(600, 300);
+            setSize(800, 400);
             setLayout(new GridLayout(4, 1));
         }
 
         panelId = new JPanel();
         panelId.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbId = new JLabel("Mã khách hàng");
+        lbId.setFont(new Font("System", Font.BOLD, 16));
         id = new JTextField(25);
+        id.setFont(new Font("System", Font.PLAIN, 16));
         panelId.add(lbId);
         panelId.add(id);
 
         panelName = new JPanel();
         panelName.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbName = new JLabel("Họ và tên");
+        lbName.setFont(new Font("System", Font.BOLD, 16));
         name = new JTextField(25);
+        name.setFont(new Font("System", Font.PLAIN, 16));
         panelName.add(lbName);
         panelName.add(name);
 
         panelPhone = new JPanel();
         panelPhone.setLayout(new FlowLayout(FlowLayout.LEFT));
         lbPhone = new JLabel("Số điện thoại");
+        lbPhone.setFont(new Font("System", Font.BOLD, 16));
         phone = new JTextField(25);
+        phone.setFont(new Font("System", Font.PLAIN, 16));
         panelPhone.add(lbPhone);
         panelPhone.add(phone);
 
@@ -235,8 +253,11 @@ class SearchPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         text = new JTextArea(1, 25);
+        text.setFont(new Font("System", Font.PLAIN, 16));
         label = new JLabel("Từ khóa");
+        label.setFont(new Font("System", Font.BOLD, 16));
         searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(label);
         add(text);
@@ -274,7 +295,20 @@ class PanelCustomer extends JPanel {
 
         tableCustomer.setModel(dtm);
         tableCustomer.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableCustomer));
+        tableCustomer.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableCustomer.setRowHeight(50);
+        tableCustomer.setFont(new Font("System", Font.PLAIN, 16));
+        tableCustomer.setBorder(new LineBorder(new Color(0, 0, 0)));
+
+        tableCustomer.getColumnModel().getColumn(0).setPreferredWidth(100);
+        tableCustomer.getColumnModel().getColumn(1).setPreferredWidth(100);
+        tableCustomer.getColumnModel().getColumn(2).setPreferredWidth(100);
+        
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableCustomer);
+        scrollPane.setBorder(new EmptyBorder(0, 150, 0, 150));
+
+        add(scrollPane);
 
         setVisible(true);
     }
@@ -311,13 +345,17 @@ class PanelCustomer extends JPanel {
 class PanelButton extends JPanel {
     private JButton addBt, delBt, editBt, reloadBt;
 
-    public PanelButton(PanelCustomer panelCustomer) {
+    public PanelButton(PanelCustomer panelCustomer, JFrame menuCustomer) {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         reloadBt = new JButton("Làm mới");
+        reloadBt.setFont(new Font("System", Font.BOLD, 16));
         addBt = new JButton("Thêm");
+        addBt.setFont(new Font("System", Font.BOLD, 16));
         delBt = new JButton("Xóa");
+        delBt.setFont(new Font("System", Font.BOLD, 16));
         editBt = new JButton("Sửa");
+        editBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(reloadBt);
         add(addBt);
@@ -346,7 +384,10 @@ class PanelButton extends JPanel {
 
                 if (row != -1) {
                     String id = String.valueOf(panelCustomer.getTableCustomer().getValueAt(row, 0));
-                    CustomerBusiness.deleteCustomer(id);
+                    if (CustomerBusiness.deleteCustomer(id) == false) {
+                        Inform.initInform(menuCustomer, "Khách hàng đang có hóa đơn, không thể xóa");
+                        return;
+                    }
                     panelCustomer.loadData();
                 }
             }
@@ -392,13 +433,13 @@ public class CustomerUI {
 
     public static void showMenu() {
         JFrame menuCustomer = new JFrame("Khách hàng");
-        menuCustomer.setSize(600, 600);
+        menuCustomer.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuCustomer.setLayout(new BorderLayout());
 
         PanelCustomer panelCustomer = new PanelCustomer();
         SearchPanel searchPanel = new SearchPanel(panelCustomer);
         panelCustomer.loadData();
-        PanelButton panelButton = new PanelButton(panelCustomer);
+        PanelButton panelButton = new PanelButton(panelCustomer, menuCustomer);
 
         menuCustomer.add(searchPanel, BorderLayout.NORTH);
         menuCustomer.add(panelCustomer, BorderLayout.CENTER);

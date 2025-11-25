@@ -3,24 +3,32 @@ package Invoice;
 import Connection.DataConnection;
 import Mode.Mode;
 import Format.Format;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.BorderLayout;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
+
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.BorderLayout;
+import java.awt.Color;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -43,7 +51,21 @@ class InvoicePanel extends JPanel {
 
         tableInvoice.setModel(dtm);
         tableInvoice.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableInvoice));
+        tableInvoice.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableInvoice.setRowHeight(50);
+        tableInvoice.setFont(new Font("System", Font.PLAIN, 16));
+        tableInvoice.setBorder(new LineBorder(new Color(0, 0, 0)));
+
+        tableInvoice.getColumnModel().getColumn(0).setPreferredWidth(100);
+        tableInvoice.getColumnModel().getColumn(1).setPreferredWidth(100);
+        tableInvoice.getColumnModel().getColumn(2).setPreferredWidth(100);
+        tableInvoice.getColumnModel().getColumn(3).setPreferredWidth(100);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableInvoice);
+        scrollPane.setBorder(new EmptyBorder(0, 50, 0, 50));
+
+        add(scrollPane);
 
         setVisible(true);
     }
@@ -55,13 +77,13 @@ class InvoicePanel extends JPanel {
         try {
             conn = DataConnection.setConnect();
 
-            String sql = "select * from invoice";
+            String sql = "select * from invoice order by date desc";
             Statement stm = conn.createStatement();
             ResultSet rs = stm.executeQuery(sql);
 
             while (rs.next()) {
                 Object[] row = { rs.getString("idInvoice"),
-                        Format.normalizeNumber(String.valueOf(rs.getBigDecimal("totalAmount"))), rs.getString("date"),
+                        Format.normalizeNumber(String.valueOf(InvoiceBusiness.getTotalAmount(rs.getString("idInvoice")))), rs.getString("date"),
                         rs.getString("idCustomer") };
                 dtm.addRow(row);
             }
@@ -138,9 +160,13 @@ class ButtonPanelInvoice extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         reloadBt = new JButton("Làm mới");
+        reloadBt.setFont(new Font("System", Font.BOLD, 16));
         addBt = new JButton("Thêm");
+        addBt.setFont(new Font("System", Font.BOLD, 16));
         delBt = new JButton("Xóa");
+        delBt.setFont(new Font("System", Font.BOLD, 16));
         detailBt = new JButton("Chi tiết");
+        detailBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(reloadBt);
         add(addBt);
@@ -179,7 +205,7 @@ class SearchPanel extends JPanel {
                     DefaultTableModel dtm = invoicePanel.getDtm();
                     dtm.setRowCount(0);
                     for (Invoice i : list) {
-                        Object[] row = { i.getIdInvoice(), Format.normalizeNumber(String.valueOf(i.getTotal())),
+                        Object[] row = { i.getIdInvoice(), Format.normalizeNumber(String.valueOf(InvoiceBusiness.getTotalAmount(i.getIdInvoice()))),
                                 i.getDate(), i.getIdCustomer() };
                         dtm.addRow(row);
                     }
@@ -194,8 +220,11 @@ class SearchPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         label = new JLabel("Từ khóa");
+        label.setFont(new Font("System", Font.BOLD, 16));
         text = new JTextArea(1, 25);
+        text.setFont(new Font("System", Font.PLAIN, 16));
         searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(label);
         add(text);
@@ -218,7 +247,7 @@ class SearchPanel extends JPanel {
 public class InvoiceUI {
     public static void showMenu() {
         JFrame menuInvoice = new JFrame("Hóa đơn");
-        menuInvoice.setSize(600, 600);
+        menuInvoice.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuInvoice.setLayout(new BorderLayout());
 
         InvoicePanel invoicePanel = new InvoicePanel();

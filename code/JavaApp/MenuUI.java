@@ -5,11 +5,15 @@ import Product.ProductUI;
 import Warehouse.WarehouseUI;
 import Customer.CustomerUI;
 import Report.ReportUI;
+
 import javax.swing.JFrame;
 import javax.swing.JButton;
+
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Font;
+
 import java.text.ParseException;
 
 public class MenuUI {
@@ -19,6 +23,7 @@ public class MenuUI {
         menu.setLayout(new GridLayout(5, 1));
 
         JButton customerBt = new JButton("Khách hàng");
+        customerBt.setFont(new Font("System", Font.BOLD, 16));
         menu.add(customerBt);
         customerBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -27,6 +32,7 @@ public class MenuUI {
         });
 
         JButton productBt = new JButton("Sản phẩm");
+        productBt.setFont(new Font("System", Font.BOLD, 16));
         menu.add(productBt);
         productBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -35,6 +41,7 @@ public class MenuUI {
         });
 
         JButton invoiceBt = new JButton("Hóa đơn");
+        invoiceBt.setFont(new Font("System", Font.BOLD, 16));
         menu.add(invoiceBt);
         invoiceBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -43,6 +50,7 @@ public class MenuUI {
         });
 
         JButton warehouseBt = new JButton("Kho");
+        warehouseBt.setFont(new Font("System", Font.BOLD, 16));
         menu.add(warehouseBt);
         warehouseBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -51,6 +59,7 @@ public class MenuUI {
         });
 
         JButton reportBt = new JButton("Báo cáo");
+        reportBt.setFont(new Font("System", Font.BOLD, 16));
         menu.add(reportBt);
         reportBt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {

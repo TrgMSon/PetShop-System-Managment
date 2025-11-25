@@ -1,11 +1,13 @@
 package Invoice;
 
 import Connection.DataConnection;
+
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ArrayList;
@@ -17,12 +19,11 @@ public class InvoiceBusiness {
         try {
             conn = DataConnection.setConnect();
 
-            String sql = "insert into invoice(idInvoice, totalAmount, date, idCustomer) values(?, ?, ?, ?)";
+            String sql = "insert into invoice(idInvoice, date, idCustomer) values( ?, ?, ?)";
             PreparedStatement psm = conn.prepareStatement(sql);
             psm.setString(1, invoice.getIdInvoice());
-            psm.setBigDecimal(2, invoice.getTotal());
-            psm.setString(3, invoice.getDate());
-            psm.setString(4, invoice.getIdCustomer());
+            psm.setString(2, invoice.getDate());
+            psm.setString(3, invoice.getIdCustomer());
 
             return psm.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -40,19 +41,25 @@ public class InvoiceBusiness {
         return false;
     }
 
-    public static boolean updateInvoice(Invoice invoice) {
-        Connection conn = null;
+    public static BigDecimal getTotalAmount(String idInvoice) {
+        BigDecimal total = new BigDecimal("0");
 
+        Connection conn = null;
         try {
             conn = DataConnection.setConnect();
-
-            String sql = "update invoice set totalAmount = ?, date = ? where idInvoice = ?";
+            String sql = """
+                    SELECT SUM(p.cost * it.quantity) AS sum FROM product AS p
+	                    JOIN invoicedetail AS it ON it.idProduct = p.idProduct
+	                    JOIN invoice AS i ON i.idInvoice = it.idInvoice
+                        WHERE i.idInvoice = ?
+                    """;
             PreparedStatement psm = conn.prepareStatement(sql);
-            psm.setBigDecimal(1, invoice.getTotal());
-            psm.setString(2, invoice.getDate());
-            psm.setString(3, invoice.getIdInvoice());
+            psm.setString(1, idInvoice);
+            ResultSet rs = psm.executeQuery();
 
-            return psm.executeUpdate() > 0;
+            if (rs.next()) {
+                total = rs.getBigDecimal("sum");
+            }
         } catch (SQLException e) {
             Logger.getLogger(InvoiceBusiness.class.getName()).log(Level.SEVERE, null, e);
         } finally {
@@ -65,7 +72,7 @@ public class InvoiceBusiness {
             }
         }
 
-        return false;
+        return total;
     }
 
     public static boolean deleteInvoice(String idInvoice) {
@@ -100,23 +107,20 @@ public class InvoiceBusiness {
         try {
             conn = DataConnection.setConnect();
 
-            String target;
+            String  sql;
             if (keyword.contains("C"))
-                target = "idCustomer";
+                sql = "SELECT * FROM invoice WHERE idCustomer LIKE ? ORDER BY date DESC";
             else if (keyword.contains("I"))
-                target = "idInvoice";
-            else if (keyword.contains("-"))
-                target = "date";
-            else
-                target = "totalAmount";
+                sql = "SELECT * FROM invoice WHERE idInvoice LIKE ? ORDER BY date DESC";
+            else 
+                sql = "SELECT * FROM invoice WHERE date LIKE ? ORDER BY date DESC";
 
-            String sql = "select * from invoice where " + target + " = '" + keyword + "'";
-            Statement stm = conn.createStatement();
-            ResultSet rs = stm.executeQuery(sql);
+            PreparedStatement psm = conn.prepareStatement(sql);
+            psm.setString(1, "%" + keyword + "%");
+            ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {
-                list.add(new Invoice(rs.getString("idInvoice"), rs.getString("idCustomer"), rs.getString("date"),
-                        rs.getBigDecimal("totalAmount")));
+                list.add(new Invoice(rs.getString("idInvoice"), rs.getString("idCustomer"), rs.getString("date")));
             }
         } catch (SQLException e) {
             Logger.getLogger(InvoiceBusiness.class.getName()).log(Level.SEVERE, null, e);

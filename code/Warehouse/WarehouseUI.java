@@ -3,24 +3,32 @@ package Warehouse;
 import Mode.Mode;
 import Connection.DataConnection;
 import Format.Format;
+
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.BorderLayout;
+import java.awt.Color;
+
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.BorderLayout;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.JTable;
-import javax.swing.JScrollPane;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -36,7 +44,7 @@ class WarehousePanel extends JPanel {
         try {
             conn = DataConnection.setConnect();
 
-            String sql = "select * from warehouse";
+            String sql = "select * from warehouse order by maxCapacity";
             Statement stm = conn.createStatement();
             ResultSet rs = stm.executeQuery(sql);
 
@@ -73,8 +81,22 @@ class WarehousePanel extends JPanel {
         loadData();
 
         tableWarehouse.setModel(dtm);
+        tableWarehouse.setBorder(new LineBorder(new Color(0, 0, 0)));
         tableWarehouse.setRowSelectionAllowed(true);
-        add(new JScrollPane(tableWarehouse));
+        tableWarehouse.getTableHeader().setFont(new Font("System", Font.BOLD, 16));
+        tableWarehouse.setFont(new Font("System", Font.PLAIN, 16));
+        tableWarehouse.setRowHeight(50);
+
+        tableWarehouse.getColumnModel().getColumn(0).setPreferredWidth(100);
+        tableWarehouse.getColumnModel().getColumn(1).setPreferredWidth(100);
+        tableWarehouse.getColumnModel().getColumn(2).setPreferredWidth(100);
+        tableWarehouse.getColumnModel().getColumn(3).setPreferredWidth(100);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tableWarehouse);
+        scrollPane.setBorder(new EmptyBorder(0, 50, 0, 50));
+
+        add(scrollPane);
 
         setVisible(true);
     }
@@ -120,8 +142,11 @@ class SearchPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         label = new JLabel("Từ khóa");
+        label.setFont(new Font("System", Font.BOLD, 16));
         text = new JTextArea(1, 25);
+        text.setFont(new Font("System", Font.PLAIN, 16));
         searchBt = new JButton("Tìm kiếm");
+        searchBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(label);
         add(text);
@@ -205,10 +230,15 @@ class ButtonPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         reloadBt = new JButton("Làm mới");
+        reloadBt.setFont(new Font("System", Font.BOLD, 16));
         addBt = new JButton("Thêm");
+        addBt.setFont(new Font("System", Font.BOLD, 16));
         delBt = new JButton("Xóa");
+        delBt.setFont(new Font("System", Font.BOLD, 16));
         editBt = new JButton("Sửa");
+        editBt.setFont(new Font("System", Font.BOLD, 16));
         detailBt = new JButton("Chi tiết");
+        detailBt.setFont(new Font("System", Font.BOLD, 16));
 
         add(reloadBt);
         add(addBt);
@@ -241,7 +271,7 @@ class ButtonPanel extends JPanel {
 public class WarehouseUI {
     public static void showMenu() {
         JFrame menuWarehouse = new JFrame("Kho");
-        menuWarehouse.setSize(600, 600);
+        menuWarehouse.setExtendedState(JFrame.MAXIMIZED_BOTH);
         menuWarehouse.setLayout(new BorderLayout());
 
         WarehousePanel warehousePanel = new WarehousePanel();

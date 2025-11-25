@@ -5,9 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import Connection.DataConnection;
 import Invoice.InvoiceDetailBusiness;
 
@@ -244,17 +246,27 @@ public class CustomerBusiness {
         return false;
     }
 
-    public static boolean isPhoneExist(String phone) {
+    public static boolean isPhoneExist(String phone, String idCustomer) {
         Connection conn = null;
 
         try {
             conn = DataConnection.setConnect();
-            String sql = "SELECT * FROM customer WHERE phone = ?";
+            String sql = "SELECT phone FROM customer WHERE idCustomer = ?";
             PreparedStatement psm = conn.prepareStatement(sql);
-            psm.setString(1, phone);
+            psm.setString(1, idCustomer);
             ResultSet rs = psm.executeQuery();
 
-            if (rs.next()) return true;
+            if (rs.next()) {
+                String phone_db = rs.getString("phone");
+                if (phone_db.equals(phone)) return false;
+                else {
+                    sql = "SELECT * FROM customer WHERE phone = ?";
+                    psm = conn.prepareStatement(sql);
+                    psm.setString(1, phone);
+                    rs = psm.executeQuery();
+                    if (rs.next()) return true;
+                }
+            }
         } catch(SQLException e) {
             Logger.getLogger(InvoiceDetailBusiness.class.getName()).log(Level.SEVERE, null, e);
         } finally {

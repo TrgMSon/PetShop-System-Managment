@@ -7,42 +7,16 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 import javax.swing.JTable;
 
+import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.math.BigDecimal;
 
-class Pair<K, V> {
-    private K key;
-    private V value;
-
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public K getKey() {
-        return key;
-    }
-
-    public V getValue() {
-        return value;
-    }
-
-    public void setKey(K key) {
-        this.key = key;
-    }
-
-    public void setValue(V value) {
-        this.value = value;
-    }
-}
-
 public class WarehouseDetailBusiness {
-    public static ArrayList<Pair<WarehouseDetail, BigDecimal>> showWarehouseDetail(String idWarehouse) {
+    public static ArrayList<Pair<WarehouseDetail, BigDecimal>> showWarehouseDetail(String idWarehouse, String keyword) {
         ArrayList<Pair<WarehouseDetail, BigDecimal>> list = new ArrayList<>();
 
         Connection conn = null;
@@ -51,10 +25,12 @@ public class WarehouseDetailBusiness {
             String sql = """
                     SELECT wd.idWarehouse, wd.idProductW, p.name, p.cost, wd.lastReceiveDate, wd.quantityInStock FROM warehousedetail AS wd
                     JOIN product AS p ON p.idProduct = wd.idProductW
-                    WHERE wd.idWarehouse = ?;
+                    WHERE wd.idWarehouse = ? AND p.name LIKE ?
+                    ORDER BY wd.lastReceiveDate DESC;
                     """;
             PreparedStatement psm = conn.prepareStatement(sql);
             psm.setString(1, idWarehouse);
+            psm.setString(2, "%" + keyword + "%");
             ResultSet rs = psm.executeQuery();
 
             while (rs.next()) {

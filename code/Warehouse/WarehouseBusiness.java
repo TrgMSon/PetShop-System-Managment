@@ -1,16 +1,16 @@
 package Warehouse;
 
 import Connection.DataConnection;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class WarehouseBusiness {
     public static boolean addWarehouse(Warehouse warehouse) {
@@ -104,11 +104,11 @@ public class WarehouseBusiness {
 
             String sql;
             if (keyword.contains("W"))
-                sql = "SELECT * FROM warehouse WHERE idWarehouse LIKE ?";
+                sql = "SELECT * FROM warehouse WHERE idWarehouse LIKE ? ORDER BY maxCapacity";
             else if (keyword.charAt(0) >= '0' && keyword.charAt(0) <= '9')
-                sql = "SELECT * FROM warehouse WHERE maxCapacity LIKE ?";
+                sql = "SELECT * FROM warehouse WHERE maxCapacity LIKE ? ORDER BY maxCapacity";
             else
-                sql = "SELECT * FROM warehouse WHERE address LIKE ?";
+                sql = "SELECT * FROM warehouse WHERE address LIKE ? ORDER BY maxCapacity";
 
             PreparedStatement psm = conn.prepareStatement(sql);
             psm.setString(1, "%" + keyword + "%");
@@ -188,14 +188,13 @@ public class WarehouseBusiness {
     }
 
     public static boolean isValidAddress(String address) {
-        List<String> validCities = Arrays.asList(
-                "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
-                "Huế", "Nha Trang", "Đà Lạt", "Vũng Tàu", "Buôn Ma Thuột",
-                "Quy Nhơn", "Thanh Hóa", "Nam Định", "Thái Nguyên", "Hạ Long",
-                "Pleiku", "Phan Thiết", "Rạch Giá", "Long Xuyên", "Bạc Liêu",
-                "Sóc Trăng", "Tuy Hòa", "Vinh", "Tam Kỳ", "Bắc Ninh");
-
-        return validCities.contains(address);
+        String[] tmp = address.trim().split(" ");
+        for (String i : tmp) {
+            for (int j=0; j<i.length(); j++) {
+                if (i.charAt(j) >= '0' && i.charAt(j) <= '9') return false;
+            }
+        }
+        return true;
     }
 
     public static boolean isExist(String idWarehouse) {
